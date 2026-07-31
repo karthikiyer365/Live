@@ -76,15 +76,51 @@ rather than burying, since it bounds every claim the rest of the dashboard makes
 - Grid and axes are solid hairlines. Dashed gridlines read as "projection" when they're just a grid.
 - Legend for ≥ 2 series; direct labels selective. Never a number on every point.
 
+## Page layout — sidebar + focus
+
+Six equal cards in one column read as a list, not an argument, and ran 3,300px tall with no hierarchy.
+Replaced with a **sidebar + focus view**:
+
+- **Left rail** — title, three live KPIs, the six questions as a persistent index, one year-range slider.
+  The rail is the table of contents; you always know where you are and what else exists.
+- **Right pane** — one question, one large chart (520px), then **Finding** and **Caveat** side by side.
+- **No cards.** Charts render with a transparent background directly onto the page plane. The palette
+  was re-validated against that surface (`--surface "#f9f9f7"`): all checks still PASS, aqua contrast
+  moves 2.74 → 2.67 and remains a labels-required WARN.
+- **Serif display type** (Newsreader) for the brand, questions, KPI figures and findings; sans (Inter)
+  for notes, labels and all chart text.
+
+### Findings are computed, never hardcoded
+
+Each question carries a `finding()` that derives its sentence from the *visible* data, so it stays true
+when the year range moves. A hardcoded sentence is a lie waiting to happen.
+
+```
+Q1  Total GDP grew 107× between 1960 and 2025. Per person, only 32× — population absorbed the rest.
+Q2  GDP per capita rose 32× since 1960, while the democracy index fell from 0.67 to 0.38. They diverge.
+Q3  Agriculture fell 42% → 16% of GDP and services rose 39% → 49%, but industry moved only +4 points.
+Q4  The deepest shock is 2020, -11.0 points below trend. 9 of 56 years fell more than 2 points short.
+Q5  Participation peaked at 34.9% in 2005, bottomed at 26.0% in 2020, and sits at 32.4% now.
+Q6  Inequality is the thinnest evidence at 17% of years covered; Democracy is the densest at 100%.
+```
+
+⚠️ Every `slice_min`/`slice_max` needs `with_ties = FALSE`. Q6 originally tied three categories at 100%
+coverage and `sprintf` vectorised it into three concatenated sentences.
+
 ## Verified in the browser
 
 Rendered at 1200px and inspected programmatically (the validator checks colour, not layout):
 
 ```
-horizontal overflow : none (scrollWidth 1200 = innerWidth)
-plots rendered      : 6/6, all with main-svg
+horizontal overflow  : none
+plots rendered       : 6/6, all with main-svg
 tick/label collisions: 0   (was 10 on Q2 before the small-multiples fix)
+nav switching        : all 6 questions render, findings recompute per question
 ```
+
+Screenshot review caught two bugs the DOM checks structurally could not: KPI tiles stacking vertically
+(a single `uiOutput` is ONE child, so `layout_columns` never split it) and a phantom 2030s column in the
+evidence heatmap. Both fixed before this doc was written.
 
 ## Known gaps
 

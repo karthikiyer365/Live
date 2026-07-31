@@ -22,6 +22,7 @@ PAL <- list(
   seq = c("#cde2fb", "#9ec5f4", "#6da7ec", "#3987e5", "#256abf", "#184f95", "#0d366b"),
 
   surface   = "#fcfcfb",
+  page      = "#f9f9f7",   # page plane — charts render borderless onto this
   ink       = "#0b0b0b",
   ink_2     = "#52514e",
   muted     = "#898781",
@@ -35,13 +36,15 @@ PAL <- list(
 style_plot <- function(p, ylab = "", xlab = "", legend = TRUE, hovermode = "x unified") {
   plotly::layout(
     p,
-    paper_bgcolor = PAL$surface,
-    plot_bgcolor  = PAL$surface,
+    # Borderless: the plot sits directly on the page plane. A distinct chart
+    # surface would read as the card we deliberately removed.
+    paper_bgcolor = "rgba(0,0,0,0)",
+    plot_bgcolor  = "rgba(0,0,0,0)",
     font   = list(family = "system-ui, -apple-system, Segoe UI, sans-serif",
                   size = 13, color = PAL$ink_2),
     margin = list(l = 62, r = 28, t = 34, b = 48),
     hovermode = hovermode,
-    hoverlabel = list(bgcolor = PAL$surface, bordercolor = PAL$baseline,
+    hoverlabel = list(bgcolor = PAL$page, bordercolor = PAL$baseline,
                       font = list(color = PAL$ink, size = 12)),
     xaxis = list(title = list(text = xlab, standoff = 12),
                  gridcolor = PAL$grid, griddash = "solid", zeroline = FALSE,
