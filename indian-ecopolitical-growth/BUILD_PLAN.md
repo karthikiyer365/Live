@@ -41,13 +41,18 @@ literacy + poverty + Gini tripping the <50%-density check — survey cadence, wo
 inside `merge_sources.R`. A separate file for `as.integer()` and a `left_join` would have been a file
 to maintain, not a module.
 
-### Phase 2 — Analytical data model ⬜ next
-- ⬜ Derived series: CAGR, decade averages, indexed-to-1991 (liberalization baseline)
-- ⬜ Wide pivot cached for correlation matrix
+### Phase 2 — Analytical data model ⏭️ SKIPPED (deliberately)
+Derived metrics (CAGR, decade averages, indexed-to-1991) were speculative before knowing which charts
+needed them. Q1/Q2 index inline; Q4 rolls its own trailing mean. Revisit when a chart actually demands
+a cached derived layer.
 
-### Phase 3 — Shiny app ⬜ planned
-- ⬜ `app.R` + `R/mod_*.R` modules, `bslib` layout
-- ⬜ Dropdowns populated from `indicator_metadata` — never hardcoded
+### Phase 3 — Shiny app ✅ first cut shipped
+- ✅ `app.R` — KPI row + 6 question-led charts, `bslib` layout, one shared year-range control
+- ✅ `R/theme.R` — validated palette tokens + shared plotly chrome
+- ✅ `R/charts.R` — 6 chart builders, one analytical question each
+- ✅ `docs/CHART_RATIONALE.md` — the questions, forms, and traps avoided
+- ⬜ Modules (`R/mod_*.R`) — deferred until the app needs more than one page
+- ⬜ Dark mode, table view, texture channel — see CHART_RATIONALE "Known gaps"
 
 ### Phases 4–10 ⬜ planned
 Visualizations → advanced analytics → comparative (BRICS/G20) → storytelling → deploy/CI → docs & tests.
@@ -58,7 +63,7 @@ Visualizations → advanced analytics → comparative (BRICS/G20) → storytelli
 
 | Concern | User story | Decision | Rationale | Pending concerns |
 |---|---|---|---|---|
-| R not installed locally | Dev can run pipeline | Write scripts blind, user runs | You opted for speed over verified execution | **Scripts are untested.** First `Rscript` run will surface syntax/pkg errors. Budget one debug pass |
+| ~~R not installed locally~~ | Dev can run pipeline | **Resolved** — R 4.6.1 installed mid-session via `brew install r` | Formula not cask: the cask needs an admin password and would hang a background job | None. Every script was executed, not written blind. Three import bugs were caught before first user run |
 | "EcoPolitical" scope | User sees political context | Econ + WGI governance | Same API, no new source, delivers the title | WGI starts 1996 — 36-year gap vs GDP's 1960 |
 | Country scope | User views India trends | `IND` only | Your call; keeps parquet tiny | Contradicts your own Step 7 (India vs BRICS). Re-pull = 1 config edit, cheap |
 | WGI codes 404 on default API | Governance charts render | Add `wb_source` column to config | `VA.EST` returns **empty**; real code is `GOV_WGI_VA.EST` + `&source=3` | Download loop must branch on `wb_source` |

@@ -7,3 +7,4 @@ docs/validation_report.html
 .Rhistory
 .RData
 .Rproj.user/
+.playwright-mcp/
