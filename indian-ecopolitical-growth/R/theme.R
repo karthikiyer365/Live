@@ -28,7 +28,11 @@ PAL <- list(
   muted     = "#898781",
   grid      = "#e1e0d9",
   baseline  = "#c3c2b7",
-  gray_ctx  = "#c3c2b7"   # de-emphasis gray for emphasis charts
+  gray_ctx  = "#c3c2b7",  # de-emphasis gray for emphasis charts
+
+  # status palette — RESERVED for good/bad meaning, never reused as "series 4"
+  st_good     = "#0ca30c",
+  st_critical = "#d03b3b"
 )
 
 # Recessive chrome: hairline solid grid (never dashed — dashing reads as

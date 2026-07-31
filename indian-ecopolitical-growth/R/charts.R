@@ -34,7 +34,7 @@ chart_growth_inflection <- function(d, base_year = 1960) {
   plot_ly(df, x = ~year, y = ~idx, color = ~k, colors = c("GDP per capita" = PAL$s2, "Total GDP" = PAL$s1),
           type = "scatter", mode = "lines", line = list(width = LINE_W),
           hovertemplate = "%{y:.0f}<extra>%{fullData.name}</extra>") |>
-    layout(yaxis = list(type = "log")) |>
+    layout(yaxis = list(type = "log", dtick = 1)) |>   # powers of 10 only; minor ticks collide
     style_plot(ylab = sprintf("Index (%d = 100, log scale)", base_year), xlab = NULL)
 }
 
@@ -182,4 +182,159 @@ chart_evidence_density <- function(d) {
 seq_scale <- function() {
   n <- length(PAL$seq)
   lapply(seq_len(n), function(i) list((i - 1) / (n - 1), PAL$seq[i]))
+}
+
+# ==========================================================================
+# Second set — one question per analytical domain. See docs/QUESTION_BANK.md
+# ==========================================================================
+
+wide <- function(d, ...) {
+  d |> filter(code %in% c(...)) |> select(year, code, value) |>
+    pivot_wider(names_from = code, values_from = value) |> arrange(year)
+}
+
+# --- Q7  TRADE ------------------------------------------------------------
+# "Did 1991 actually open the economy, or was it already opening?"
+# Single series -> area is legal and reads as magnitude over time.
+chart_openness <- function(d) {
+  df <- series(d, "NE.TRD.GNFS.ZS")
+
+  plot_ly(df, x = ~year, y = ~value, type = "scatter", mode = "lines",
+          fill = "tozeroy", fillcolor = "rgba(42,120,214,0.10)",
+          line = list(width = LINE_W, color = PAL$s1),
+          hovertemplate = "%{y:.1f}% of GDP<extra>Trade openness</extra>") |>
+    layout(shapes = list(list(type = "line", x0 = 1991, x1 = 1991, y0 = 0, y1 = 1,
+                              yref = "paper", line = list(color = PAL$baseline, width = 1))),
+           annotations = list(list(x = 1991, y = 1.02, yref = "paper",
+                                   text = "1991 liberalisation", showarrow = FALSE,
+                                   xanchor = "left", font = list(size = 11, color = PAL$muted)))) |>
+    style_plot(ylab = "Trade as % of GDP (exports + imports)", xlab = NULL, legend = FALSE)
+}
+
+# --- Q8  INFRASTRUCTURE ---------------------------------------------------
+# "Which spread faster — the grid or the network?"
+# Both are % / per-100 on comparable 0-100 scales, so ONE axis is honest here.
+chart_diffusion_speed <- function(d) {
+  # Mobile is recorded as a literal 0 back to 1960. Counting those decades makes
+  # diffusion look 64 years slow and inverts the answer, so each series starts at
+  # its first non-zero observation.
+  df <- d |>
+    filter(code %in% c("EG.ELC.ACCS.ZS", "IT.CEL.SETS.P2"), !is.na(value)) |>
+    mutate(k = recode(code, EG.ELC.ACCS.ZS = "Electricity access",
+                            IT.CEL.SETS.P2 = "Mobile subscriptions")) |>
+    arrange(year) |> group_by(k) |> filter(year >= min(year[value > 0])) |> ungroup()
+  ends <- df |> group_by(k) |> filter(year == max(year)) |> ungroup()
+
+  plot_ly(df, x = ~year, y = ~value, color = ~k,
+          colors = c("Electricity access" = PAL$s1, "Mobile subscriptions" = PAL$s2),
+          type = "scatter", mode = "lines", line = list(width = LINE_W),
+          hovertemplate = "%{y:.1f}<extra>%{fullData.name}</extra>") |>
+    add_annotations(data = ends, x = ~year, y = ~value, text = ~k, xanchor = "right",
+                    yshift = 14, showarrow = FALSE, inherit = FALSE,
+                    font = list(size = 12, color = PAL$ink_2)) |>
+    style_plot(ylab = "% of population / per 100 people", xlab = NULL, legend = FALSE)
+}
+
+# --- Q9  FISCAL -----------------------------------------------------------
+# "Guns, books, or medicine — what does the state actually prioritise?"
+chart_state_priorities <- function(d) {
+  df <- d |>
+    filter(code %in% c("MS.MIL.XPND.GD.ZS", "SE.XPD.TOTL.GD.ZS", "SH.XPD.CHEX.GD.ZS")) |>
+    mutate(k = recode(code, MS.MIL.XPND.GD.ZS = "Military",
+                            SE.XPD.TOTL.GD.ZS = "Education",
+                            SH.XPD.CHEX.GD.ZS = "Health")) |>
+    filter(!is.na(value)) |> arrange(year)
+  ends <- df |> group_by(k) |> filter(year == max(year)) |> ungroup()
+
+  plot_ly(df, x = ~year, y = ~value, color = ~k,
+          colors = c(Military = PAL$s2, Education = PAL$s1, Health = PAL$s3),
+          type = "scatter", mode = "lines+markers",
+          line = list(width = LINE_W), marker = list(size = 5),
+          hovertemplate = "%{y:.2f}% of GDP<extra>%{fullData.name}</extra>") |>
+    add_annotations(data = ends, x = ~year, y = ~value, text = ~k, xanchor = "left",
+                    xshift = 6, showarrow = FALSE, inherit = FALSE,
+                    font = list(size = 12, color = PAL$ink_2)) |>
+    style_plot(ylab = "% of GDP", xlab = NULL, legend = FALSE)
+}
+
+# --- Q10  EXTERNAL FRAGILITY ---------------------------------------------
+# "How close has India come to running out of foreign exchange?"
+# Reserves expressed in MONTHS OF IMPORTS — a derived fragility metric, with
+# the conventional 3-month adequacy floor drawn as a status threshold.
+chart_reserve_adequacy <- function(d) {
+  df <- wide(d, "FI.RES.TOTL.CD", "NE.IMP.GNFS.ZS", "NY.GDP.MKTP.CD") |>
+    mutate(months = FI.RES.TOTL.CD / ((NE.IMP.GNFS.ZS / 100 * NY.GDP.MKTP.CD) / 12)) |>
+    filter(!is.na(months))
+
+  plot_ly(df, x = ~year, y = ~months, type = "scatter", mode = "lines",
+          line = list(width = LINE_W, color = PAL$s1),
+          hovertemplate = "%{y:.1f} months of imports<extra>%{x}</extra>") |>
+    layout(shapes = list(
+             # 3-month adequacy floor: status colour, because it means "danger"
+             list(type = "rect", xref = "paper", x0 = 0, x1 = 1, y0 = 0, y1 = 3,
+                  fillcolor = "rgba(208,59,59,0.08)", line = list(width = 0), layer = "below")),
+           # right side: the left of the band is where the 1960s series actually sits
+           annotations = list(list(x = 0.99, xref = "paper", y = 3, yanchor = "bottom",
+                                   text = "3-month adequacy floor", showarrow = FALSE,
+                                   xanchor = "right",
+                                   font = list(size = 11, color = PAL$st_critical)))) |>
+    style_plot(ylab = "Reserves, in months of imports", xlab = NULL, legend = FALSE)
+}
+
+# --- Q11  ENVIRONMENT -----------------------------------------------------
+# "Is growth decoupling from emissions?"
+# Both indexed to the first common year -> one axis, no dual-scale sleight.
+chart_decoupling <- function(d) {
+  co2 <- series(d, "EN.GHG.CO2.PC.CE.AR5") |> filter(!is.na(value))
+  gdp <- series(d, "NY.GDP.PCAP.CD")       |> filter(!is.na(value))
+  if (nrow(co2) == 0 || nrow(gdp) == 0) return(plot_ly() |> style_plot(legend = FALSE))
+  b   <- max(min(co2$year), min(gdp$year))   # first year BOTH exist
+  df  <- bind_rows(
+    index_to(co2, b) |> mutate(k = "CO₂ per capita"),
+    index_to(gdp, b) |> mutate(k = "GDP per capita")
+  ) |> filter(!is.na(idx))
+
+  plot_ly(df, x = ~year, y = ~idx, color = ~k,
+          colors = c("CO₂ per capita" = PAL$s2, "GDP per capita" = PAL$s1),
+          type = "scatter", mode = "lines", line = list(width = LINE_W),
+          hovertemplate = "%{y:.0f}<extra>%{fullData.name}</extra>") |>
+    style_plot(ylab = sprintf("Index (%d = 100)", b), xlab = NULL)
+}
+
+# --- Q12  DEMOCRACY -------------------------------------------------------
+# "Which part of democracy eroded first?"
+# EIGHT series — past the categorical cap, and the story is "these two moved."
+# So: emphasis. Two accent hues, the rest in de-emphasis gray. Never eight hues.
+chart_democratic_erosion <- function(d) {
+  df <- d |> filter(category == "Democracy", !is.na(value)) |> arrange(year)
+  if (nrow(df) == 0) return(plot_ly() |> style_plot(legend = FALSE))
+
+  chg <- df |> group_by(indicator) |>
+    summarise(delta = last(value) - first(value), .groups = "drop") |> arrange(delta)
+  focus <- c(chg$indicator[1], chg$indicator[nrow(chg)])   # biggest faller, biggest riser
+
+  ctx  <- df |> filter(!indicator %in% focus)
+  hot  <- df |> filter(indicator %in% focus)
+  ends <- hot |> group_by(indicator) |> filter(year == max(year)) |> ungroup()
+
+  p <- plot_ly()
+  for (nm in unique(ctx$indicator)) {
+    s <- ctx |> filter(indicator == nm)
+    p <- add_trace(p, data = s, x = ~year, y = ~value, type = "scatter", mode = "lines",
+                   line = list(width = 1.25, color = PAL$gray_ctx), name = nm,
+                   showlegend = FALSE, hovertemplate = paste0("%{y:.2f}<extra>", nm, "</extra>"))
+  }
+  cols <- setNames(c(PAL$s2, PAL$s1), focus)
+  for (nm in focus) {
+    s <- hot |> filter(indicator == nm)
+    p <- add_trace(p, data = s, x = ~year, y = ~value, type = "scatter", mode = "lines",
+                   line = list(width = LINE_W + 0.5, color = cols[[nm]]), name = nm,
+                   showlegend = FALSE, hovertemplate = paste0("%{y:.2f}<extra>", nm, "</extra>"))
+  }
+  p |>
+    add_annotations(data = ends, x = ~year, y = ~value, text = ~indicator, xanchor = "right",
+                    yshift = 13, showarrow = FALSE, inherit = FALSE,
+                    font = list(size = 11, color = PAL$ink_2)) |>
+    layout(yaxis = list(range = c(0, 1))) |>
+    style_plot(ylab = "V-Dem index (0–1)", xlab = NULL, legend = FALSE)
 }

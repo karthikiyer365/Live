@@ -1,7 +1,8 @@
 # Chart rationale — the questions, and why each form was chosen
 
-_Six charts. Each answers one question about trend, bias, weakness, or anomaly. Palette validated with
-the dataviz validator; no chart uses a second y-axis._
+_Twelve charts across six domains. Each answers one question about trend, bias, weakness, or anomaly.
+Palette validated with the dataviz validator; no chart uses a second y-axis. The full domain question
+list, including rejected questions, is in `QUESTION_BANK.md`._
 
 ## The questions
 
@@ -16,6 +17,25 @@ something the raw series hides.
 | Q4 | Which years are genuine shocks, not noise? | **Anomalies** — 1991, 2008, 2020 against India's own norm | Diverging bar | diverging |
 | Q5 | Did growth actually reach women? | **Bias** — participation fell while GDP rose | Connected scatter | sequential (time) |
 | Q6 | Where is our evidence weakest? | **Measurement bias** — thinnest data on inequality | Heatmap | sequential |
+
+### Second set (Q7–Q12)
+
+| # | Domain | Question | Form | Colour job |
+|---|---|---|---|---|
+| Q7 | Trade | Did 1991 actually open the economy? | Area (single series) | 1 hue |
+| Q8 | Society | Which spread faster — grid or network? | Multi-line | 2 categorical |
+| Q9 | State | Guns, books, or medicine? | Multi-line + markers | 3 categorical |
+| Q10 | State | How close to running out of foreign exchange? | Line + threshold band | 1 hue + **status** |
+| Q11 | Environment | Is growth decoupling from emissions? | Indexed multi-line | 2 categorical |
+| Q12 | Politics | Which part of democracy eroded first? | **Emphasis** (8 series) | 2 hues + gray |
+
+**Q12 is why emphasis exists.** Eight V-Dem components is past the categorical ceiling, and eight hues
+would be unreadable *and* bury the point. The steepest faller and the only riser carry colour; the other
+six sit in context gray. Never solve "too many series" by generating more hues.
+
+**Q10 is the only chart using status colour.** The 3-month adequacy floor means *danger*, not "series 2",
+which is exactly the reserved use. Its label sits right-aligned because the left of the band is where the
+1960s series actually runs.
 
 ## Form decisions that were not obvious
 
@@ -121,6 +141,19 @@ nav switching        : all 6 questions render, findings recompute per question
 Screenshot review caught two bugs the DOM checks structurally could not: KPI tiles stacking vertically
 (a single `uiOutput` is ONE child, so `layout_columns` never split it) and a phantom 2030s column in the
 evidence heatmap. Both fixed before this doc was written.
+
+## Bugs the second set surfaced
+
+| Bug | Cause | Fix |
+|---|---|---|
+| Q1 had 8 tick collisions | log axis drew minor tick labels (5,6,7,8,9) | `dtick = 1` — powers of ten only |
+| Q8 concluded electricity spread *faster* | mobile is a literal `0` back to 1960, so diffusion looked 64 years slow | both series start at first **non-zero** year |
+| Q11 said "since 1970", chart based at 1990 | chart had an internal year floor the finding didn't share | chart derives its base from the data; both read the same window |
+| Q12 said "since 1960", chart based at 1990 | same class as above | internal floor removed |
+
+The Q11/Q12 pair is the instructive one: any time a chart filters internally but its finding reads the
+full range, **the text and the picture describe different periods**. Charts now take the window they are
+given rather than imposing one.
 
 ## Known gaps
 
