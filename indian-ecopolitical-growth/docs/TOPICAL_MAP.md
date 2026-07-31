@@ -2,10 +2,12 @@
 
 _Generated 2026-07-31, commit `11dcced`. Legend: `⟶` = dependency edge, `▓` = planned (specified in `BUILD_PLAN.md`, absent from code)._
 
-> **Honesty header.** This project currently has **exactly one real file**: `config/indicators.csv`. Every
-> other node below is `▓ planned ▓`. This map is a target topology, not an as-built one — regenerate it
-> after Phase 1 lands so the `▓` markers burn off. Nodes marked ✅ were verified against the live World
-> Bank API this session; nodes marked ▓ have never executed.
+> **Honesty header — updated after Phase 1 shipped.** The ETL is now **real and executed**:
+> `config/indicators.csv`, 6 scripts under `scripts/`, and both parquet outputs exist and have run
+> end-to-end (4,355 rows, 64 indicators, 1789–2031, ~6s from a clean tree). Nodes A0–A3 and B1–B5 are
+> built. Everything Shiny-side (A4–A8, B6, B7) is still `▓ planned ▓` — no `app.R` exists yet.
+> Map C describes code that now runs; the flatten and parse steps below are copied from working scripts,
+> not sketched.
 
 Repo shape: two independent projects under one root. `google-playstore-analysis/` is a finished Python
 EDA (its own `docs/TOPICAL_MAP.md`). This map covers `indian-ecopolitical-growth/` only — an R Shiny

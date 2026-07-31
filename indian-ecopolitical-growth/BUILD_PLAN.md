@@ -17,19 +17,29 @@ The architecture that emerged from grilling: **one config file feeds everything*
 - 🗂️ This project scaffolded at `indian-ecopolitical-growth/`
 - 📄 Root `README.md` rewritten as multi-project index
 
-### Phase 1 — Data acquisition & ETL ⏳ current
+### Phase 1 — Data acquisition & ETL ✅ complete
+_Full pipeline runs clean → validated in **6 seconds**. R 4.6.1 installed via `brew install r`._
 - ✅ 51 candidate WB indicator codes validated against live API
 - ✅ 2 dead codes found and dropped (see Key Decisions)
 - ✅ 6 governance codes found to be renamed + on a separate DB — schema consequence absorbed
 - ✅ Batch endpoint found — whole WB dataset in 2 calls, not 49
 - ✅ IMF WEO + V-Dem promoted into Phase 1; multi-country parity verified
 - ✅ `config/indicators.csv` — **64 indicators, 3 source systems, 12 categories**
-- ⬜ `scripts/download_worldbank.R` — 2 batched calls, split by `source_param`
-- ⬜ `scripts/download_imf.R` — 1 SDMX call, XML parse
-- ⬜ `scripts/download_vdem.R` — one-time 34MB fetch → filtered extract
-- ⬜ `scripts/clean_worldbank.R` → `merge_sources.R` — unify 3 shapes to one long table
-- ⬜ `scripts/validate.R` — 6 checks + HTML report
-- ⬜ `data_processed/indicators.parquet` + `indicator_metadata.parquet`
+- ✅ `scripts/download_worldbank.R` — 2 batched calls → 2,994 rows
+- ✅ `scripts/download_imf.R` — 1 SDMX call → 336 rows, through 2031
+- ✅ `scripts/download_vdem.R` — 34MB fetch → 1,673 rows, **1789–2025**
+- ✅ `scripts/merge_sources.R` — 3 shapes → one long table, 4,355 rows
+- ✅ `scripts/validate.R` — 6 checks, 5 PASS / 1 WARN → HTML report
+- ✅ `data_processed/indicators.parquet` + `indicator_metadata.parquet`
+- ✅ `scripts/run_all.R` — end-to-end verified from a clean tree
+
+**Verified output:** India GDP 1960 $0.037T → 1991 $0.27T → 2024 $3.76T. Forecast boundary lands
+exactly at 2025 actual / 2026 projected. Gini returns its expected 8 points. The single WARN is
+literacy + poverty + Gini tripping the <50%-density check — survey cadence, working as designed.
+
+⚠️ `clean_worldbank.R` from the original folder sketch was **never created** — cleaning is 6 lines
+inside `merge_sources.R`. A separate file for `as.integer()` and a `left_join` would have been a file
+to maintain, not a module.
 
 ### Phase 2 — Analytical data model ⬜ next
 - ⬜ Derived series: CAGR, decade averages, indexed-to-1991 (liberalization baseline)
@@ -119,31 +129,14 @@ forecast to 2031**. They will not match exactly — different vintages and metho
 distinct labelled series (`... (IMF)` suffix is already in the config), and forecast years need visual
 separation from actuals (dashed line past the last actual year).
 
-**Decision: keep both (option A).** Rationale is no longer just "forecasts are interesting" — the IMF
-projection is the **benchmark our own models get scored against** in Phase 6.
+**Decision: keep both (option A).** Both series ship, both are labelled, forecast years render dashed.
 
-### 3e. IMF as forecast benchmark — storage consequence
+`is_forecast` is derived in `merge_sources.R` as `year > max(year of any WB actual)` — not hardcoded.
 
-Our models will be compared to IMF WEO projections. That comparison is only honest if it is
-**vintage-aware**, and that changes what Phase 1 must persist.
-
-The trap: WEO is *revised continuously*. Scoring our 2031 forecast against the WEO series as it stands
-today is not a fair fight — today's WEO already absorbed data our model was not given. Comparing
-against a forecast that has since been corrected flatters whichever side you look at last.
-
-Two things follow for Phase 1:
-
-1. **Persist the vintage stamp.** The SDMX response carries `COUNTRY_UPDATE_DATE` per series
-   (observed: `9/26/2025`). Store it as a column — without it we cannot say *when* the IMF believed
-   what it believed.
-2. **Vintage dataflows exist and are the honest comparator.** The IMF exposes frozen snapshots
-   alongside the live flow — confirmed in the dataflow list:
-   `WEO_2025_OCT_VINTAGE`, `FM_2025_OCT_VINTAGE`, `QGFS_2026_{JAN,FEB,APR,MAY}_VINTAGE`.
-   Phase 6 backtesting should pull an *old* vintage, use only data available at that date, and score
-   both our model and the IMF's then-published forecast against what actually happened.
-
-Phase 1 scope stays small: fetch the live `WEO` flow, **keep `COUNTRY_UPDATE_DATE`**. Vintage
-backtesting is Phase 6 work, but the column has to exist from day one or the history is unrecoverable.
+**Deliberately deferred:** own forecasting models, and any vintage-aware backtest against IMF
+projections. Phase 1 does keep the `vintage` column (`COUNTRY_UPDATE_DATE`, e.g. `9/26/2025`) because
+it arrives free in the SDMX response and is unrecoverable later — one column, no logic. Frozen
+snapshots (`WEO_2025_OCT_VINTAGE`, …) exist if that work is ever picked up. Not building toward it now.
 
 ---
 
@@ -274,9 +267,10 @@ next ▶ Phase 1 scripts — blocked on nothing, ready to write
 - `US-007` User overlays democracy/governance scores on economic series
 - `US-008` User compares India to BRICS peers
 - `US-009` User downloads a rendered report of the current view
-- `US-010` User sees our forecast and the IMF forecast on one chart, actuals solid / projections dashed
-- `US-011` User sees a backtest scorecard — our model vs the IMF's *then-published* forecast, both
-  scored against what actually happened
+- `US-010` User sees IMF projections past the last actual year, rendered dashed
+
+**Deferred indefinitely** (revisit only if the dashboard demands it)
+- `US-011` Own forecasting models benchmarked against IMF WEO vintages
 
 ---
 
