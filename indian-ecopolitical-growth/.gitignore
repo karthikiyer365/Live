@@ -1,0 +1,9 @@
+# raw API dumps — regenerable, noisy
+data_raw/
+
+# rendered validation output
+docs/validation_report.html
+
+.Rhistory
+.RData
+.Rproj.user/
