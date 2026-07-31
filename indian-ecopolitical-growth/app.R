@@ -109,7 +109,7 @@ QUESTIONS <- list(
                  pk$value, pk$year, tr$value, tr$year, f$value[nrow(f)], fmt_d(p0$value), fmt_d(p1$value))
        }),
 
-  list(id = "q7", domain = "Economy", nav = "Openness",
+  list(id = "q7", domain = "Economy", nav = "Openness", span = 1,
        q = "Did 1991 actually open the economy, or was it already opening?",
        note = paste("Trade as a share of GDP. A single series, so an area is legal and reads as magnitude",
                     "over time. The 1991 marker lets you check whether the break is a step or a slope."),
@@ -124,7 +124,7 @@ QUESTIONS <- list(
                  a$value, a$year, pk$value, pk$year, b$value, b$year)
        }),
 
-  list(id = "q8", domain = "Society", nav = "Diffusion",
+  list(id = "q8", domain = "Society", nav = "Diffusion", span = 1,
        q = "Which spread faster \u2014 the grid or the network?",
        note = paste("Both measures sit on comparable 0\u2013100 scales, so one axis is honest here.",
                     "Electricity is a century-old state project; mobile is a twenty-year private one."),
@@ -148,7 +148,7 @@ QUESTIONS <- list(
                  e$y0, e$gain, e$yrs, e$per, m$y0, m$gain, m$yrs, m$per, m$per / max(e$per, .001))
        }),
 
-  list(id = "q9", domain = "State", nav = "Priorities",
+  list(id = "q9", domain = "State", nav = "Priorities", span = 1,
        q = "Guns, books, or medicine \u2014 what does the state actually prioritise?",
        note = paste("Three spending lines as a share of GDP. Military data runs from 1960; education and",
                     "health only from the late 1990s, so the comparison is honest only where all three overlap."),
@@ -162,7 +162,7 @@ QUESTIONS <- list(
                  mil, edu, hea)
        }),
 
-  list(id = "q10", domain = "State", nav = "Fragility",
+  list(id = "q10", domain = "State", nav = "Fragility", span = 1,
        q = "How close has India come to running out of foreign exchange?",
        note = paste("A derived metric: reserves divided by monthly imports. The shaded band is the",
                     "conventional three-month adequacy floor \u2014 a status colour, because it means danger,",
@@ -179,7 +179,7 @@ QUESTIONS <- list(
                  lo$months, lo$year, sum(df$months < 3), df$months[nrow(df)])
        }),
 
-  list(id = "q11", domain = "Environment", nav = "Decoupling",
+  list(id = "q11", domain = "Environment", nav = "Decoupling", span = 1,
        q = "Is growth decoupling from emissions?",
        note = paste("Both indexed to a common base on one axis. If the lines separate, each dollar of",
                     "income is costing less carbon \u2014 relative decoupling. Absolute decoupling needs the",
@@ -199,7 +199,7 @@ QUESTIONS <- list(
                  b, gg, cg)
        }),
 
-  list(id = "q12", domain = "Politics", nav = "Erosion",
+  list(id = "q12", domain = "Politics", nav = "Erosion", span = 2,
        q = "Which part of democracy eroded first?",
        note = paste("Eight V-Dem components. Eight hues would be unreadable and would bury the point, so",
                     "this is an emphasis chart: the steepest faller and the only riser carry colour, the",
@@ -216,6 +216,48 @@ QUESTIONS <- list(
          w <- x |> slice_min(delta, n = 1, with_ties = FALSE)
          sprintf("%s fell furthest since %d, from %.2f to %.2f. %d of %d components declined.",
                  w$indicator, w$y0, w$d0, w$d1, sum(x$delta < 0), nrow(x))
+       }),
+
+  list(id = "q13", domain = "Politics", nav = "Profile", span = 1,
+       q = "What shape is India\u2019s governance profile, and how has it changed?",
+       note = paste("A radar, used under the only conditions that make one honest: six axes, one country,",
+                    "exactly two time points, and every axis on the identical \u22122.5\u20132.5 scale."),
+       caveat = paste("Radar exaggerates by area and the axis order is arbitrary \u2014 read the axis values,",
+                      "never the size of the shape. WGI starts in 1996."),
+       fn = function(d) chart_governance_radar(d),
+       finding = function(d) {
+         g <- d |> filter(category == "Governance", !is.na(value))
+         if (nrow(g) == 0) return(NULL)
+         yrs <- range(g$year)
+         ch <- g |> filter(year %in% yrs) |> group_by(indicator) |>
+           summarise(delta = value[which.max(year)] - value[which.min(year)], .groups = "drop")
+         up <- ch |> slice_max(delta, n = 1, with_ties = FALSE)
+         dn <- ch |> slice_min(delta, n = 1, with_ties = FALSE)
+         sprintf("Between %d and %d, %s improved most (%+.2f) and %s slipped most (%+.2f).",
+                 yrs[1], yrs[2], up$indicator, up$delta, dn$indicator, dn$delta)
+       }),
+
+  list(id = "q14", domain = "Economy", nav = "Composition", span = 1,
+       q = "What did the shape of the economy look like before reform, and now?",
+       note = paste("A dumbbell \u2014 the right form for before/after per item. Every row is the same unit,",
+                    "% of GDP, which is what makes one shared axis honest."),
+       caveat = "Tax, education and health series start later than 1991, so those rows use their earliest available year.",
+       fn = function(d) chart_composition_shift(d),
+       finding = function(d) {
+         codes <- c(NV.AGR.TOTL.ZS="Agriculture", NV.SRV.TOTL.ZS="Services",
+                    NE.EXP.GNFS.ZS="Exports", NE.IMP.GNFS.ZS="Imports",
+                    GC.TAX.TOTL.GD.ZS="Tax revenue", MS.MIL.XPND.GD.ZS="Military",
+                    NV.IND.TOTL.ZS="Industry", SE.XPD.TOTL.GD.ZS="Education",
+                    SH.XPD.CHEX.GD.ZS="Health", BX.KLT.DINV.WD.GD.ZS="FDI inflows")
+         x <- d |> filter(code %in% names(codes), !is.na(value)) |> group_by(code) |>
+           summarise(from = value[which.min(abs(year - 1991))],
+                     to = value[which.max(year)], .groups = "drop") |>
+           mutate(label = codes[code], delta = to - from)
+         if (nrow(x) == 0) return(NULL)
+         u <- x |> slice_max(delta, n = 1, with_ties = FALSE)
+         v <- x |> slice_min(delta, n = 1, with_ties = FALSE)
+         sprintf("Since 1991 %s rose most (%+.1f pts of GDP) and %s fell most (%+.1f).",
+                 u$label, u$delta, v$label, v$delta)
        }),
 
   list(id = "q6", domain = "Evidence", nav = "Evidence", q = "Where is our evidence weakest?",
@@ -237,101 +279,103 @@ QUESTIONS <- list(
 # Order by domain so the rail groups; a small caps heading is injected into the
 # first label of each group. radioButtons has no optgroup, but choiceNames takes
 # arbitrary HTML — one radio group, real visual grouping, no extra state.
-DOMAIN_ORDER <- c("Economy", "State", "Society", "Politics", "Environment", "Evidence")
-QUESTIONS <- QUESTIONS[order(match(vapply(QUESTIONS, `[[`, "", "domain"), DOMAIN_ORDER))]
+# span 2 = the chart needs a full-width row (wide axis labels, a colourbar, or
+# stacked panels); span 1 = it reads fine at half width in a 2-up grid.
+SPAN <- c(q1 = 1, q2 = 2, q3 = 1, q4 = 1, q5 = 2, q6 = 2, q7 = 1,
+          q8 = 1, q9 = 1, q10 = 1, q11 = 1, q12 = 2, q13 = 1, q14 = 1)
+QUESTIONS <- lapply(QUESTIONS, function(x) { x$span <- unname(SPAN[[x$id]]); x })
 
-nav_labels <- function(qs) {
-  doms <- vapply(qs, `[[`, "", "domain")
-  lapply(seq_along(qs), function(i) {
-    head <- if (i == 1 || doms[i] != doms[i - 1])
-      sprintf("<span class='nav-dom'>%s</span>", doms[i]) else ""
-    HTML(sprintf("%s<span class='nav-lab'>%s</span>", head, qs[[i]]$nav))
-  })
-}
+# Environment + Evidence are both about limits — of the planet, and of what we
+# actually know. One tab rather than two singletons.
+TAB_OF <- c(Economy = "Economy", State = "State", Society = "Society",
+            Politics = "Politics", Environment = "Limits", Evidence = "Limits")
+QUESTIONS <- lapply(QUESTIONS, function(x) { x$tab <- unname(TAB_OF[[x$domain]]); x })
+TAB_ORDER <- c("Economy", "State", "Society", "Politics", "Limits")
+QUESTIONS <- QUESTIONS[order(match(vapply(QUESTIONS, `[[`, "", "tab"), TAB_ORDER))]
+
+nav_labels <- NULL  # replaced by tabs
 
 css <- sprintf("
-  body { background:%s; }
+  body, .bslib-page-sidebar { background:%s; color:%s; }
   .display { font-family:'Newsreader',Georgia,serif; font-weight:400; letter-spacing:-.01em; }
-  .brand   { font-size:1.32rem; line-height:1.15; color:%s; margin-bottom:2px; }
-  .brand-sub { font-size:.72rem; color:%s; letter-spacing:.06em; text-transform:uppercase; }
-  .rail-kpi { font-family:'Newsreader',Georgia,serif; font-size:1.5rem; color:%s;
-              font-variant-numeric:tabular-nums; line-height:1.15; }
-  .rail-kpi-l { font-size:.68rem; color:%s; text-transform:uppercase; letter-spacing:.07em; }
-  .rule { height:1px; background:%s; margin:16px 0; }
+  .brand   { font-size:1.3rem; line-height:1.15; color:%s; margin-bottom:2px; }
+  .brand-sub { font-size:.7rem; color:%s; letter-spacing:.06em; text-transform:uppercase; }
 
-  /* nav list — radio inputs restyled as an index, no boxes */
-  .nav-q .shiny-options-group { display:flex; flex-direction:column; gap:1px; }
-  .nav-q .radio { margin:0; }
-  .nav-q .radio input { display:none; }
-  .nav-q .radio label { display:block; width:100%%; cursor:pointer; padding:7px 10px 7px 12px;
-      font-size:.86rem; color:%s; border-left:2px solid transparent; border-radius:0 4px 4px 0; }
-  .nav-q .radio label:hover { background:rgba(11,11,11,.035); color:%s; }
-  .nav-q .radio input:checked + span, .nav-q .radio label:has(input:checked) {
-      color:%s; font-weight:600; border-left-color:%s; background:rgba(42,120,214,.07); }
-  .nav-dom { display:block; font-size:.62rem; color:%s; text-transform:uppercase;
-             letter-spacing:.09em; margin:14px 0 3px; }
-  .radio:first-child .nav-dom { margin-top:0; }
-  .nav-q .control-label { font-size:.68rem; color:%s; text-transform:uppercase;
-      letter-spacing:.07em; margin-bottom:8px; }
+  /* hero figures: SANS and proportional figures. A serif display face on a hero
+     number reads as decoration, and tabular-nums makes large digits look loose. */
+  .rail-kpi   { font-size:1.45rem; color:%s; line-height:1.15; font-weight:600;
+                font-variant-numeric:proportional-nums; }
+  .rail-kpi-l { font-size:.66rem; color:%s; text-transform:uppercase; letter-spacing:.07em; }
+  .rule { height:1px; background:%s; margin:15px 0; }
 
-  /* focus pane — no card borders anywhere */
-  .q-head { font-size:1.62rem; line-height:1.25; color:%s; margin:0 0 8px; max-width:32ch; }
-  .q-note { font-size:.85rem; color:%s; line-height:1.5; max-width:78ch; margin:0 0 18px; }
-  .meta-l { font-size:.68rem; color:%s; text-transform:uppercase; letter-spacing:.07em; margin-bottom:4px; }
-  .finding { font-family:'Newsreader',Georgia,serif; font-size:1.12rem; line-height:1.45;
-             color:%s; max-width:62ch; }
-  .caveat  { font-size:.8rem; color:%s; line-height:1.5; max-width:62ch; }
+  .nav-underline .nav-link { color:%s; border:0; padding:9px 2px; margin-right:22px;
+      font-size:.87rem; background:none; }
+  .nav-underline .nav-link.active { color:%s; font-weight:600; box-shadow:inset 0 -2px 0 %s; }
+  .nav-underline { border-bottom:1px solid %s; margin-bottom:6px; }
+
+  .grid { display:grid; grid-template-columns:repeat(2, minmax(0,1fr));
+          gap:30px 26px; margin-top:22px; }
+  .cell-2 { grid-column:1 / -1; }
+  @media (max-width:1100px) { .grid { grid-template-columns:1fr; }
+                              .cell-2 { grid-column:auto; } }
+
+  .c-title { font-family:'Newsreader',Georgia,serif; font-size:1.12rem; line-height:1.3;
+             color:%s; margin:0 0 5px; }
+  .c-note  { font-size:.78rem; color:%s; line-height:1.45; margin:0 0 8px; }
+  .c-find  { font-family:'Newsreader',Georgia,serif; font-size:.99rem; line-height:1.4;
+             color:%s; margin-top:9px; border-left:2px solid %s; padding-left:11px; }
+  .c-cav   { font-size:.72rem; color:%s; line-height:1.4; margin-top:7px; }
   .irs-bar, .irs-handle>i:first-child { background:%s !important; border-color:%s !important; }
+  .irs-grid-text, .irs-min, .irs-max { color:%s !important; }
 ",
-  "#f9f9f7", PAL$ink, PAL$muted, PAL$ink, PAL$muted, PAL$grid,
-  PAL$ink_2, PAL$ink, PAL$s1, PAL$s1, PAL$muted, PAL$muted,
-  PAL$ink, PAL$ink_2, PAL$muted, PAL$ink, PAL$ink_2, PAL$s1, PAL$s1)
+  PAL$page, PAL$ink_2, PAL$ink, PAL$muted,
+  PAL$ink, PAL$muted, PAL$grid,
+  PAL$muted, PAL$ink, PAL$s1, PAL$grid,
+  PAL$ink, PAL$muted, PAL$ink, PAL$s1, PAL$muted,
+  PAL$s1, PAL$s1, PAL$muted)
+
+chart_cell <- function(qq) {
+  div(class = if (qq$span == 2) "cell-2" else "",
+      p(class = "c-title", qq$q),
+      p(class = "c-note", qq$note),
+      plotlyOutput(qq$id, height = if (qq$span == 2) "360px" else "300px"),
+      div(class = "c-find", textOutput(paste0("f_", qq$id), inline = TRUE)),
+      div(class = "c-cav", qq$caveat))
+}
+
+tab_panel <- function(tab) {
+  qs <- Filter(function(x) x$tab == tab, QUESTIONS)
+  nav_panel(tab, div(class = "grid", lapply(qs, chart_cell)))
+}
 
 ui <- page_sidebar(
-  theme = bs_theme(version = 5, bg = "#f9f9f7", fg = PAL$ink, primary = PAL$s1,
+  theme = bs_theme(version = 5, bg = PAL$page, fg = PAL$ink, primary = PAL$s1,
                    base_font = font_google("Inter", local = FALSE),
                    heading_font = font_google("Newsreader", local = FALSE)),
   tags$head(tags$style(HTML(css))),
   fillable = FALSE,
 
   sidebar = sidebar(
-    width = 260, bg = "#f9f9f7", border = TRUE, padding = 20,
+    width = 240, bg = PAL$page, border = TRUE, padding = 20,
     div(class = "display brand", "Understanding Indian EcoPolitical Growth"),
-    div(class = "brand-sub", "1789–2031"),
+    div(class = "brand-sub", "1789\u20132031"),
     div(class = "rule"),
     uiOutput("rail_kpis"),
     div(class = "rule"),
-    div(class = "nav-q", radioButtons("q", "The questions",
-                                      choiceNames  = nav_labels(QUESTIONS),
-                                      choiceValues = vapply(QUESTIONS, `[[`, "", "id"),
-                                      selected = QUESTIONS[[1]]$id, width = "100%")),
-    div(class = "rule"),
     sliderInput("yrs", "Year range", min = 1900, max = max(DATA$year),
-                value = c(1960, max(DATA$year)), sep = "", width = "100%")
+                value = c(1960, max(DATA$year)), sep = "", width = "100%"),
+    div(class = "rule"),
+    p(style = sprintf("color:%s;font-size:.71rem;line-height:1.45", PAL$muted),
+      sprintf("%d indicators. World Bank, IMF WEO, V-Dem. Projections past the last actual year are IMF estimates.",
+              nrow(META)))
   ),
 
-  div(style = "max-width:960px;padding:6px 8px 40px",
-      div(class = "meta-l", style = "margin-bottom:6px", textOutput("q_domain", inline = TRUE)),
-      h1(class = "display q-head", textOutput("q_title", inline = TRUE)),
-      p(class = "q-note", textOutput("q_note", inline = TRUE)),
-      plotlyOutput("plot", height = "520px"),
-      div(style = "display:flex;gap:56px;flex-wrap:wrap;margin-top:26px",
-          div(style = "flex:1 1 340px",
-              div(class = "meta-l", "Finding"),
-              div(class = "finding", textOutput("finding", inline = TRUE))),
-          div(style = "flex:1 1 240px",
-              div(class = "meta-l", "Caveat"),
-              div(class = "caveat", textOutput("caveat", inline = TRUE)))),
-      div(class = "rule", style = "margin-top:30px"),
-      p(style = sprintf("color:%s;font-size:.75rem", PAL$muted),
-        sprintf("%d indicators · World Bank Open Data · IMF World Economic Outlook · V-Dem. Projections past the last actual year are IMF estimates.",
-                nrow(META)))
-  )
+  div(style = "max-width:1240px;padding:2px 4px 50px",
+      do.call(navset_underline, lapply(TAB_ORDER, tab_panel)))
 )
 
 server <- function(input, output, session) {
 
-  current  <- reactive(Filter(function(x) x$id == input$q, QUESTIONS)[[1]])
   filtered <- reactive(DATA |> filter(year >= input$yrs[1], year <= input$yrs[2]))
 
   output$rail_kpis <- renderUI({
@@ -340,23 +384,21 @@ server <- function(input, output, session) {
       if (nrow(r) == 0) return(NULL) else r[which.max(r$year), ]
     }
     g <- latest("NY.GDP.MKTP.CD"); p <- latest("NY.GDP.PCAP.CD"); d <- latest("v2x_polyarchy")
-    tile <- function(l, v) div(style = "margin-bottom:12px",
+    tile <- function(l, v) div(style = "margin-bottom:11px",
                                div(class = "rail-kpi-l", l), div(class = "rail-kpi", v))
     tagList(
-      tile(sprintf("GDP · %d", g$year), sprintf("$%.2fT", g$value / 1e12)),
-      tile(sprintf("Per capita · %d", p$year), fmt_d(p$value)),
-      tile(sprintf("Democracy · %d", d$year), sprintf("%.2f", d$value))
+      tile(sprintf("GDP \u00b7 %d", g$year), sprintf("$%.2fT", g$value / 1e12)),
+      tile(sprintf("Per capita \u00b7 %d", p$year), fmt_d(p$value)),
+      tile(sprintf("Democracy \u00b7 %d", d$year), sprintf("%.2f", d$value))
     )
   })
 
-  output$q_domain <- renderText(current()$domain)
-  output$q_title  <- renderText(current()$q)
-  output$q_note  <- renderText(current()$note)
-  output$caveat  <- renderText(current()$caveat)
-  output$plot    <- renderPlotly(current()$fn(filtered()))
-  output$finding <- renderText({
-    f <- current()$finding(filtered())
-    if (is.null(f)) "Not enough data in the selected range to state a finding." else f
+  lapply(QUESTIONS, function(qq) {
+    output[[qq$id]] <- renderPlotly(qq$fn(filtered()))
+    output[[paste0("f_", qq$id)]] <- renderText({
+      f <- qq$finding(filtered())
+      if (is.null(f)) "Not enough data in the selected range to state a finding." else f
+    })
   })
 }
 

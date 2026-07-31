@@ -155,6 +155,57 @@ The Q11/Q12 pair is the instructive one: any time a chart filters internally but
 full range, **the text and the picture describe different periods**. Charts now take the window they are
 given rather than imposing one.
 
+## Third set (Q13–Q14) — beyond line charts
+
+| # | Question | Form | Why this form |
+|---|---|---|---|
+| Q13 | What shape is India's governance profile? | **Radar** | Six axes, one country, two time points, one identical −2.5–2.5 scale |
+| Q14 | What did the economy look like before reform, and now? | **Dumbbell** | The endorsed before→after form; every row is the same unit (% of GDP) |
+
+**Radar is a judgment call, and only defensible under conditions that all hold here.** Radar lies when
+axes carry different units, when there are too many axes to read, or when the enclosed *area* gets read
+as a quantity. Mitigations applied: identical scale on every axis, only six axes, only two series, light
+fills, and a finding that quotes axis values rather than area. The caveat says the axis order is
+arbitrary and the area is not meaningful.
+
+**Dumbbell needed no such argument** — it is the listed form for before/after per item, and restricting
+the rows to `% of GDP` series is what makes one shared axis honest.
+
+## Dark mode
+
+`MODE <- "dark"` in `R/theme.R` flips the whole app. Dark is **not an inverted light theme** — it is its
+own set of steps from the same ramps, validated against the dark surface:
+
+```
+dark cat 1-3 vs #1a1a19   CVD dE 9.4 (deutan), normal 26.5, all >= 3:1   PASS
+dark sequential ramp      monotone L, adjacent dL >= .06, 4 deg hue      PASS
+```
+
+The sequential ramp is **reversed** for dark so the dimmest step sits nearest the background and the
+brightest reads as "most", and never goes darker than step 600.
+
+Verified live in the browser rather than assumed: rendered line strokes are `#d95926` / `#3987e5` (the
+dark steps, not the light ones), gridlines `#2c2c2a`, and body text clears 19.4:1.
+
+### Two anti-patterns this pass fixed
+
+The KPI figures were breaking two documented rules and I had not noticed until re-reading the mark spec:
+
+- **A serif display face on a hero figure** reads as decoration → hero figures are now Inter, the same
+  sans as everything else.
+- **`tabular-nums` on a large standalone number** makes big digits look loose → now
+  `proportional-nums`; tabular is for columns that align vertically, like axis ticks.
+
+## Layout — domain tabs
+
+Fourteen charts in one rail was too long a list. Now five tabs — Economy (5), State (2), Society (2),
+Politics (3), Limits (2) — each a 2-up grid. `span = 2` promotes a chart to a full-width row when it
+needs the space: wide category labels (heatmap), a colourbar (connected scatter), or stacked panels
+(small multiples). Plotly renders lazily per tab, so only the active tab's charts mount.
+
+*Environment + Evidence merged into **Limits*** — the limits of the planet and the limits of what we
+actually know. Better than two singleton tabs.
+
 ## Known gaps
 
 - **No dark mode yet.** The token table in `R/theme.R` carries only light values. Dark is a *selected*

@@ -137,7 +137,7 @@ chart_growth_vs_inclusion <- function(d) {
   plot_ly(df, x = ~gdp_pc, y = ~flfp, type = "scatter", mode = "lines+markers",
           line = list(color = PAL$gray_ctx, width = LINE_W),
           marker = list(size = MARK_SZ + 1, color = ~year, colorscale = seq_scale(),
-                        line = list(color = PAL$surface, width = 2),  # 2px surface ring
+                        line = list(color = PAL$page, width = 2),  # 2px surface ring
                         colorbar = list(title = list(text = "Year", font = list(size = 11)),
                                         thickness = 10, outlinewidth = 0,
                                         tickfont = list(color = PAL$muted, size = 10))),
@@ -178,11 +178,6 @@ chart_evidence_density <- function(d) {
     style_plot(ylab = NULL, xlab = NULL, legend = FALSE, hovermode = "closest")
 }
 
-# plotly wants a fraction/colour list for a continuous ramp
-seq_scale <- function() {
-  n <- length(PAL$seq)
-  lapply(seq_len(n), function(i) list((i - 1) / (n - 1), PAL$seq[i]))
-}
 
 # ==========================================================================
 # Second set — one question per analytical domain. See docs/QUESTION_BANK.md
@@ -337,4 +332,90 @@ chart_democratic_erosion <- function(d) {
                     font = list(size = 11, color = PAL$ink_2)) |>
     layout(yaxis = list(range = c(0, 1))) |>
     style_plot(ylab = "V-Dem index (0–1)", xlab = NULL, legend = FALSE)
+}
+
+# --- Q13  POLITICS --------------------------------------------------------
+# "What shape is India's governance profile, and how has it changed?"
+# RADAR. A judgment call, and only defensible under strict conditions, all of
+# which hold here: six axes (few enough to read), one entity, exactly two time
+# points, and every axis on the IDENTICAL -2.5..2.5 scale. Radar lies when axes
+# carry different units or when the enclosed area is read as a quantity — so the
+# fills stay light and the finding quotes the axis values, never the area.
+chart_governance_radar <- function(d) {
+  g <- d |> filter(category == "Governance", !is.na(value))
+  if (nrow(g) == 0) return(plot_ly() |> style_plot(legend = FALSE))
+
+  short <- function(x) sub(" and ", " & ", x)
+  yrs <- range(g$year)
+  pick <- function(y) g |> filter(year == y) |> arrange(indicator) |>
+    transmute(axis = short(indicator), value)
+
+  a <- pick(yrs[1]); b <- pick(yrs[2])
+  close_loop <- function(df) bind_rows(df, df[1, ])   # radar must close the ring
+  a <- close_loop(a); b <- close_loop(b)
+
+  plot_ly(type = "scatterpolar", mode = "lines+markers") |>
+    add_trace(r = a$value, theta = a$axis, name = as.character(yrs[1]),
+              line = list(color = PAL$gray_ctx, width = LINE_W),
+              marker = list(size = 6, color = PAL$gray_ctx),
+              fill = "toself", fillcolor = "rgba(120,120,115,0.10)",
+              hovertemplate = paste0("%{theta}<br>%{r:.2f} in ", yrs[1], "<extra></extra>")) |>
+    add_trace(r = b$value, theta = b$axis, name = as.character(yrs[2]),
+              line = list(color = PAL$s1, width = LINE_W),
+              marker = list(size = 6, color = PAL$s1),
+              fill = "toself", fillcolor = "rgba(57,135,229,0.14)",
+              hovertemplate = paste0("%{theta}<br>%{r:.2f} in ", yrs[2], "<extra></extra>")) |>
+    layout(
+      polar = list(
+        bgcolor = "rgba(0,0,0,0)",
+        radialaxis = list(range = c(-2.5, 2.5), tickvals = c(-2.5, 0, 2.5),
+                          gridcolor = PAL$grid, linecolor = PAL$grid,
+                          tickfont = list(color = PAL$muted, size = 10), angle = 90),
+        angularaxis = list(gridcolor = PAL$grid, linecolor = PAL$baseline,
+                           tickfont = list(color = PAL$ink_2, size = 10))
+      )
+    ) |>
+    style_plot(legend = TRUE, hovermode = "closest",
+               margin = list(l = 70, r = 70, t = 40, b = 30))
+}
+
+# --- Q14  ECONOMY ---------------------------------------------------------
+# "What did the shape of the economy look like before reform, and now?"
+# DUMBBELL — the endorsed form for before/after per item. Every row is the SAME
+# unit (% of GDP), which is what makes one shared axis honest here.
+chart_composition_shift <- function(d, from_year = 1991) {
+  codes <- c(NV.AGR.TOTL.ZS = "Agriculture", NV.IND.TOTL.ZS = "Industry",
+             NV.SRV.TOTL.ZS = "Services",    NE.EXP.GNFS.ZS = "Exports",
+             NE.IMP.GNFS.ZS = "Imports",     GC.TAX.TOTL.GD.ZS = "Tax revenue",
+             MS.MIL.XPND.GD.ZS = "Military",  SE.XPD.TOTL.GD.ZS = "Education",
+             SH.XPD.CHEX.GD.ZS = "Health",   BX.KLT.DINV.WD.GD.ZS = "FDI inflows")
+
+  df <- d |> filter(code %in% names(codes), !is.na(value)) |>
+    group_by(code) |>
+    summarise(from = value[which.min(abs(year - from_year))],
+              from_y = year[which.min(abs(year - from_year))],
+              to = value[which.max(year)], to_y = max(year), .groups = "drop") |>
+    mutate(label = codes[code]) |> arrange(to)
+  if (nrow(df) == 0) return(plot_ly() |> style_plot(legend = FALSE))
+  df$label <- factor(df$label, levels = df$label)
+
+  p <- plot_ly()
+  # connectors first so the dots sit on top
+  for (i in seq_len(nrow(df))) {
+    p <- add_trace(p, type = "scatter", mode = "lines",
+                   x = c(df$from[i], df$to[i]), y = c(df$label[i], df$label[i]),
+                   line = list(color = PAL$grid, width = 3),
+                   showlegend = FALSE, hoverinfo = "skip")
+  }
+  p |>
+    add_trace(type = "scatter", mode = "markers", x = df$from, y = df$label,
+              name = "then", marker = list(size = MARK_SZ + 2, color = PAL$gray_ctx,
+                                           line = list(color = PAL$page, width = 2)),
+              hovertemplate = "%{y}<br>%{x:.1f}% of GDP<extra>then</extra>") |>
+    add_trace(type = "scatter", mode = "markers", x = df$to, y = df$label,
+              name = "now", marker = list(size = MARK_SZ + 2, color = PAL$s1,
+                                          line = list(color = PAL$page, width = 2)),
+              hovertemplate = "%{y}<br>%{x:.1f}% of GDP<extra>now</extra>") |>
+    style_plot(ylab = NULL, xlab = "% of GDP", legend = TRUE, hovermode = "closest",
+               margin = list(l = 92, r = 26, t = 26, b = 40))
 }
