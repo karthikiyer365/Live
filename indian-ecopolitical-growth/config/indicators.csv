@@ -1,0 +1,65 @@
+category,indicator,code,source_system,source_param,unit
+Economy,GDP,NY.GDP.MKTP.CD,WB,2,current US$
+Economy,GDP growth,NY.GDP.MKTP.KD.ZG,WB,2,annual %
+Economy,GDP per capita,NY.GDP.PCAP.CD,WB,2,current US$
+Economy,GDP per capita growth,NY.GDP.PCAP.KD.ZG,WB,2,annual %
+Economy,GDP per capita PPP,NY.GDP.PCAP.PP.CD,WB,2,current international $
+Economy,Inflation (CPI),FP.CPI.TOTL.ZG,WB,2,annual %
+Economy,Inflation (GDP deflator),NY.GDP.DEFL.KD.ZG,WB,2,annual %
+Economy,Unemployment,SL.UEM.TOTL.ZS,WB,2,% of labor force
+Trade,Current account balance,BN.CAB.XOKA.GD.ZS,WB,2,% of GDP
+Trade,Trade openness,NE.TRD.GNFS.ZS,WB,2,% of GDP
+Trade,Exports,NE.EXP.GNFS.ZS,WB,2,% of GDP
+Trade,Imports,NE.IMP.GNFS.ZS,WB,2,% of GDP
+Trade,FDI net inflows,BX.KLT.DINV.WD.GD.ZS,WB,2,% of GDP
+Trade,Exchange rate,PA.NUS.FCRF,WB,2,INR per US$
+Trade,Total reserves,FI.RES.TOTL.CD,WB,2,current US$
+Fiscal,Central government debt,GC.DOD.TOTL.GD.ZS,WB,2,% of GDP
+Fiscal,Tax revenue,GC.TAX.TOTL.GD.ZS,WB,2,% of GDP
+Fiscal,Real interest rate,FR.INR.RINR,WB,2,%
+Fiscal,Military expenditure,MS.MIL.XPND.GD.ZS,WB,2,% of GDP
+Sectors,Agriculture value added,NV.AGR.TOTL.ZS,WB,2,% of GDP
+Sectors,Industry value added,NV.IND.TOTL.ZS,WB,2,% of GDP
+Sectors,Services value added,NV.SRV.TOTL.ZS,WB,2,% of GDP
+Inequality,Gini index,SI.POV.GINI,WB,2,index
+Inequality,Poverty headcount ($3.00/day),SI.POV.DDAY,WB,2,% of population
+Population,Population,SP.POP.TOTL,WB,2,people
+Population,Population growth,SP.POP.GROW,WB,2,annual %
+Population,Urban population,SP.URB.TOTL.IN.ZS,WB,2,% of total
+Population,Rural population,SP.RUR.TOTL.ZS,WB,2,% of total
+Population,Life expectancy,SP.DYN.LE00.IN,WB,2,years
+Population,Fertility rate,SP.DYN.TFRT.IN,WB,2,births per woman
+Population,Infant mortality,SP.DYN.IMRT.IN,WB,2,per 1000 live births
+Population,Female labor participation,SL.TLF.CACT.FE.ZS,WB,2,% of female pop 15+
+Infrastructure,Access to electricity,EG.ELC.ACCS.ZS,WB,2,% of population
+Infrastructure,Internet users,IT.NET.USER.ZS,WB,2,% of population
+Infrastructure,Mobile subscriptions,IT.CEL.SETS.P2,WB,2,per 100 people
+Education,Adult literacy rate,SE.ADT.LITR.ZS,WB,2,% ages 15+
+Education,Secondary enrollment,SE.SEC.ENRR,WB,2,% gross
+Education,Tertiary enrollment,SE.TER.ENRR,WB,2,% gross
+Education,Government education spend,SE.XPD.TOTL.GD.ZS,WB,2,% of GDP
+Health,Current health expenditure,SH.XPD.CHEX.GD.ZS,WB,2,% of GDP
+Environment,CO2 emissions per capita,EN.GHG.CO2.PC.CE.AR5,WB,2,t CO2e per capita
+Environment,Renewable energy consumption,EG.FEC.RNEW.ZS,WB,2,% of final energy
+Environment,Forest area,AG.LND.FRST.ZS,WB,2,% of land area
+Governance,Voice and accountability,GOV_WGI_VA.EST,WB,3,estimate -2.5 to 2.5
+Governance,Political stability,GOV_WGI_PV.EST,WB,3,estimate -2.5 to 2.5
+Governance,Government effectiveness,GOV_WGI_GE.EST,WB,3,estimate -2.5 to 2.5
+Governance,Regulatory quality,GOV_WGI_RQ.EST,WB,3,estimate -2.5 to 2.5
+Governance,Rule of law,GOV_WGI_RL.EST,WB,3,estimate -2.5 to 2.5
+Governance,Control of corruption,GOV_WGI_CC.EST,WB,3,estimate -2.5 to 2.5
+Fiscal,General govt gross debt (IMF),GGXWDG_NGDP,IMF,WEO,% of GDP
+Fiscal,General govt net lending/borrowing (IMF),GGXCNL_NGDP,IMF,WEO,% of GDP
+Fiscal,General govt primary balance (IMF),GGXONLB_NGDP,IMF,WEO,% of GDP
+Economy,Real GDP growth (IMF),NGDP_RPCH,IMF,WEO,annual %
+Economy,Inflation avg consumer prices (IMF),PCPIPCH,IMF,WEO,annual %
+Economy,GDP per capita USD (IMF),NGDPDPC,IMF,WEO,current US$
+Trade,Current account balance (IMF),BCA_NGDPD,IMF,WEO,% of GDP
+Democracy,Electoral democracy index,v2x_polyarchy,VDEM,vdem,index 0-1
+Democracy,Liberal democracy index,v2x_libdem,VDEM,vdem,index 0-1
+Democracy,Participatory democracy index,v2x_partipdem,VDEM,vdem,index 0-1
+Democracy,Deliberative democracy index,v2x_delibdem,VDEM,vdem,index 0-1
+Democracy,Egalitarian democracy index,v2x_egaldem,VDEM,vdem,index 0-1
+Democracy,Rule of law index,v2xcl_rol,VDEM,vdem,index 0-1
+Democracy,Freedom of expression,v2x_freexp_altinf,VDEM,vdem,index 0-1
+Democracy,Political corruption index,v2x_corr,VDEM,vdem,index 0-1
