@@ -9,7 +9,7 @@
 suppressPackageStartupMessages({
   library(shiny)
   library(bslib)
-  library(arrow)
+  library(nanoparquet)
   library(dplyr)
   library(plotly)
 })
@@ -377,6 +377,7 @@ ui <- page_sidebar(
 server <- function(input, output, session) {
 
   filtered <- reactive(DATA |> filter(year >= input$yrs[1], year <= input$yrs[2]))
+
 
   output$rail_kpis <- renderUI({
     latest <- function(cd) {

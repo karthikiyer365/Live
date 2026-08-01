@@ -1,0 +1,77 @@
+# Builds the India EcoPolitical dashboard to WebAssembly and publishes it to
+# GitHub Pages.
+#
+# Why an Action rather than committing the build: the shinylive export is ~119MB
+# of generated webR runtime and package binaries. That belongs in a Pages
+# artifact, not in git history. The repo stays source-only.
+
+name: Deploy dashboard
+
+# MANUAL ONLY for now. Auto-deploy on push is commented out until the
+# shinylive + plotly rendering issue below is resolved — see docs/DEPLOYMENT.md.
+# Do not enable the push trigger while 4 of 5 charts render blank in WASM.
+on:
+  workflow_dispatch:
+  # push:
+  #   branches: [main]
+  #   paths:
+  #     - 'indian-ecopolitical-growth/app.R'
+  #     - 'indian-ecopolitical-growth/R/**'
+  #     - 'indian-ecopolitical-growth/data_processed/**'
+  #     - '.github/workflows/deploy-dashboard.yml' 
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: 'release'
+          use-public-rspm: true      # Ubuntu binaries — minutes not hours
+
+      - name: Install build packages
+        run: |
+          install.packages(c("shinylive", "shiny", "bslib", "plotly",
+                             "dplyr", "tidyr", "nanoparquet"))
+        shell: Rscript {0}
+
+      - name: Stage app (runtime files only)
+        run: |
+          mkdir -p stage/R stage/data_processed
+          cp indian-ecopolitical-growth/app.R              stage/
+          cp indian-ecopolitical-growth/R/theme.R          stage/R/
+          cp indian-ecopolitical-growth/R/charts.R         stage/R/
+          cp indian-ecopolitical-growth/data_processed/*.parquet stage/data_processed/
+          echo "staged:" && find stage -type f
+
+      - name: Export to WebAssembly
+        run: shinylive::export("stage", "_site")
+        shell: Rscript {0}
+
+      - name: Report bundle size
+        run: du -sh _site && find _site -type f | wc -l
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

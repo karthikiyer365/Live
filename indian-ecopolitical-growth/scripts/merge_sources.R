@@ -7,7 +7,7 @@
 source("scripts/utils.R")
 
 suppressPackageStartupMessages({
-  library(arrow)
+  library(nanoparquet)
   library(tidyr)
   library(purrr)
 })
