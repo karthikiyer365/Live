@@ -40,11 +40,16 @@ jobs:
           r-version: 'release'
           use-public-rspm: true      # Ubuntu binaries — minutes not hours
 
-      - name: Install build packages
-        run: |
-          install.packages(c("shinylive", "shiny", "bslib", "plotly",
-                             "dplyr", "tidyr", "nanoparquet"))
-        shell: Rscript {0}
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          packages: |
+            any::shinylive
+            any::shiny
+            any::bslib
+            any::plotly
+            any::dplyr
+            any::tidyr
+            any::nanoparquet
 
       - name: Stage app (runtime files only)
         run: |

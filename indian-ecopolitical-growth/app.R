@@ -378,7 +378,6 @@ server <- function(input, output, session) {
 
   filtered <- reactive(DATA |> filter(year >= input$yrs[1], year <= input$yrs[2]))
 
-
   output$rail_kpis <- renderUI({
     latest <- function(cd) {
       r <- DATA |> filter(code == cd, !is_forecast, !is.na(value))
