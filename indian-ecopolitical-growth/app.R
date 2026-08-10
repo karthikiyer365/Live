@@ -9,7 +9,7 @@
 suppressPackageStartupMessages({
   library(shiny)
   library(bslib)
-  library(arrow)
+  library(nanoparquet)
   library(dplyr)
   library(plotly)
 })
