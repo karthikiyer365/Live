@@ -353,6 +353,32 @@ ui <- page_sidebar(
                    base_font = font_google("Inter", local = FALSE),
                    heading_font = font_google("Newsreader", local = FALSE)),
   tags$head(tags$style(HTML(css))),
+
+  # shinylive serves plotly's JS out of the WASM filesystem, so `crosstalk` and
+  # `Plotly` can still be loading when the first chart values arrive. renderValue
+  # then throws and htmlwidgets never retries, so whichever tab is open at boot
+  # stays blank for the session. Hold the values back until the globals exist.
+  # A fixed timeout cannot win this race — plotly-latest.min.js is ~3.5MB out of
+  # the WASM filesystem, so "how long is enough" varies by machine. Instead, watch
+  # the charts themselves and re-render only while one is still visibly blank.
+  tags$head(tags$script(HTML("
+    (function () {
+      var last = 0, bumps = 0;
+      var t = setInterval(function () {
+        if (!window.Shiny || !window.Shiny.setInputValue) return;   // Shiny not up yet
+        if (!(window.Plotly && window.crosstalk)) return;           // deps still downloading
+        var blank = [].slice.call(document.querySelectorAll('.plotly.html-widget'))
+          .some(function (el) { return el.offsetParent !== null &&
+                                       !el.querySelector('.plot-container'); });
+        if (!blank) { clearInterval(t); return; }                   // every visible chart painted
+        var now = Date.now();
+        if (now - last < 2500) return;                              // let the last re-render land
+        if (++bumps > 8) { clearInterval(t); return; }              // stop nagging, blame elsewhere
+        last = now;
+        Shiny.setInputValue('plotly_ready', bumps, {priority: 'event'});
+      }, 300);
+    })();
+  "))),
   fillable = FALSE,
 
   sidebar = sidebar(
@@ -394,7 +420,12 @@ server <- function(input, output, session) {
   })
 
   lapply(QUESTIONS, function(qq) {
-    output[[qq$id]] <- renderPlotly(qq$fn(filtered()))
+    output[[qq$id]] <- renderPlotly({
+      # Re-render trigger, NOT a gate: plotly's JS ships with the first render
+      # payload, so blocking that render would deadlock the shim waiting on it.
+      input$plotly_ready
+      qq$fn(filtered())
+    })
     output[[paste0("f_", qq$id)]] <- renderText({
       f <- qq$finding(filtered())
       if (is.null(f)) "Not enough data in the selected range to state a finding." else f

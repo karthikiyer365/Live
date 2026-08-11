@@ -7,9 +7,9 @@
 
 name: Deploy dashboard
 
-# MANUAL ONLY for now. Auto-deploy on push is commented out until the
-# shinylive + plotly rendering issue below is resolved — see docs/DEPLOYMENT.md.
-# Do not enable the push trigger while 4 of 5 charts render blank in WASM.
+# MANUAL ONLY. The plotly-blank-charts blocker that originally forced this is fixed,
+# so the push trigger below is safe to uncomment whenever every merge to main should
+# republish — left off so publishing stays a deliberate act. See docs/DEPLOYMENT.md.
 on:
   workflow_dispatch:
   # push:
