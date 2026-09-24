@@ -1,0 +1,53 @@
+{
+  "model": "TF-IDF (words + word pairs) → Logistic Regression (balanced)",
+  "predicts": "ticket type: Incident, Request, Problem, Change",
+  "input": "ticket subject + body text only; no agent-added fields",
+  "trained_on": "11,670 English tickets, Kaggle 'Multilingual Customer Support Tickets' (aa_dataset-tickets-multi-lang-5-2-50-version.csv) — synthetic",
+  "evaluation": "families of reworded tickets kept on one side of every split; test set opened once",
+  "test": {
+    "tickets": 2334,
+    "accuracy": 0.7995,
+    "accuracy_95_range": [
+      0.7517,
+      0.8449
+    ],
+    "macro_f1": 0.8153,
+    "macro_f1_95_range": [
+      0.7944,
+      0.8351
+    ],
+    "floors": {
+      "accuracy": 0.4019,
+      "macro_f1": 0.25
+    },
+    "recall_per_type": {
+      "Incident": 0.7292,
+      "Request": 0.985,
+      "Problem": 0.5967,
+      "Change": 0.9672
+    }
+  },
+  "routing": {
+    "auto_route_if_confidence_at_least": 0.75,
+    "auto_routed_share_on_test": 0.461,
+    "accuracy_when_auto_routed_on_test": 0.9638,
+    "otherwise": "send to a person"
+  },
+  "known_limitations": [
+    "Weakest type: Problem (recall 60%) — mostly confused with Incident; the labels themselves blur this line.",
+    "English only — German tickets were excluded and cannot be routed.",
+    "Synthetic data: results show the method works, not performance on a real inbox. Revalidate on real tickets before use.",
+    "The dataset's department labels were found unreliable (weakly related to text), so this model does not route to departments.",
+    "Short tickets (10 words or fewer) are noticeably less accurate."
+  ],
+  "created": "2026-09-24",
+  "seed": 42,
+  "library_versions": {
+    "python": "3.11.14",
+    "pandas": "3.0.6",
+    "numpy": "2.4.6",
+    "scikit-learn": "1.9.1",
+    "matplotlib": "3.11.2",
+    "seaborn": "0.13.2"
+  }
+}
