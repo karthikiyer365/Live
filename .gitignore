@@ -3,3 +3,4 @@
 topic-classification/data/
 .DS_Store
 .ipynb_checkpoints/
+topic-classification/artifacts/*.joblib
