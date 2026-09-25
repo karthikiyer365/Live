@@ -102,4 +102,4 @@ It is still **manual-only** (`workflow_dispatch`). The chart blocker that origin
 that is fixed, so the commented-out `push` trigger is now safe to enable whenever you want
 every merge to main to republish — uncomment it and nothing else changes.
 
-Live at <https://karthikiyer365.github.io/Live/> — the dashboard is the default tab of the site shell (`site/index.html`) and is served from `/india/`.
+Live at <https://projects.karthikiyer.info/#india> — served from `/india/` and opened from the projects landing page (`site/index.html`). The old `karthikiyer365.github.io/Live/` address redirects there.
