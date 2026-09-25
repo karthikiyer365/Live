@@ -330,9 +330,9 @@ css <- sprintf("
 ",
   PAL$page, PAL$ink_2, PAL$ink, PAL$muted,
   PAL$ink, PAL$muted, PAL$grid,
-  PAL$muted, PAL$ink, PAL$s1, PAL$grid,
+  PAL$muted, PAL$accent, PAL$accent, PAL$grid,
   PAL$ink, PAL$muted, PAL$ink, PAL$s1, PAL$muted,
-  PAL$s1, PAL$s1, PAL$muted)
+  PAL$accent, PAL$accent, PAL$muted)
 
 chart_cell <- function(qq) {
   div(class = if (qq$span == 2) "cell-2" else "",
@@ -349,7 +349,7 @@ tab_panel <- function(tab) {
 }
 
 ui <- page_sidebar(
-  theme = bs_theme(version = 5, bg = PAL$page, fg = PAL$ink, primary = PAL$s1,
+  theme = bs_theme(version = 5, bg = PAL$page, fg = PAL$ink, primary = PAL$accent,
                    base_font = font_google("Geist", local = FALSE),
                    heading_font = font_google("Geist", local = FALSE)),
   tags$head(tags$style(HTML(css))),

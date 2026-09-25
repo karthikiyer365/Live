@@ -24,7 +24,8 @@ MODE <- "light"  # white site shell (site/index.html) — matches writing.karthi
     ink = "#0b0b0b", ink_2 = "#52514e", muted = "#898781",
     grid = "#e1e0d9", baseline = "#c3c2b7", gray_ctx = "#c3c2b7",
     hover_bg = "#ffffff", hairline = "rgba(11,11,11,0.10)",
-    st_good = "#0ca30c", st_critical = "#d03b3b"
+    st_good = "#0ca30c", st_critical = "#d03b3b",
+    accent = "#d07"  # UI chrome only (tabs, slider): pink from karthikiyer.info; data keeps s1-s4
   ),
   dark = list(
     s1 = "#3987e5", s2 = "#d95926", s3 = "#199e70", s4 = "#c98500",
@@ -36,7 +37,8 @@ MODE <- "light"  # white site shell (site/index.html) — matches writing.karthi
     ink = "#ffffff", ink_2 = "#c3c2b7", muted = "#898781",
     grid = "#2c2c2a", baseline = "#383835", gray_ctx = "#5a5a55",
     hover_bg = "#242423", hairline = "rgba(255,255,255,0.10)",
-    st_good = "#0ca30c", st_critical = "#d03b3b"
+    st_good = "#0ca30c", st_critical = "#d03b3b",
+    accent = "#d07"  # UI chrome only (tabs, slider): pink from karthikiyer.info; data keeps s1-s4
   )
 )
 
