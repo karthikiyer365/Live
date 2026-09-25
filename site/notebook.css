@@ -1,0 +1,20 @@
+/* Font override for nbconvert pages (linked in by deploy-dashboard.yml) so rendered
+   notebooks read like writing.karthikiyer.info. Chart text is baked into the PNGs
+   by matplotlib and does not change. */
+@import url("https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap");
+
+:root {
+  --jp-ui-font-family: "Geist", system-ui, -apple-system, sans-serif;
+  --jp-content-font-family: "Geist", system-ui, -apple-system, sans-serif;
+  --jp-code-font-family: "Geist Mono", ui-monospace, SFMono-Regular, monospace;
+  --jp-layout-color0: #fff;
+}
+body { background: #fff; color: #1a1a1a; }
+
+/* Jupyter sets word-break:break-all on output text, which splits words mid-way on
+   narrow screens ("Digita / l"). Wrap at spaces; break a word only if it can't fit. */
+.jp-OutputArea-output pre { word-break: normal; overflow-wrap: anywhere; }
+
+/* pandas right-aligns every cell; most tables here hold text, which reads ragged. */
+.jp-RenderedHTMLCommon table.dataframe td,
+.jp-RenderedHTMLCommon table.dataframe th { text-align: left; }

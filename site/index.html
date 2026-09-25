@@ -1,36 +1,47 @@
 <!doctype html>
 <!-- Site shell: a top bar that switches between projects. Each project is built into its own
      folder by .github/workflows/deploy-dashboard.yml and shown untouched in the frame below.
-     Add a project = one <a> in the nav + one build step in the workflow. -->
+     Add a project = one <a> in the nav + one build step in the workflow.
+     Look follows writing.karthikiyer.info: white, Geist, pink accent (#d07). -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Karthik Iyer — Projects</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
 <style>
-  :root { --bg: #ffffff; --fg: #1f2328; --muted: #656d76; --line: #d0d7de; --accent: #0969da; }
-  @media (prefers-color-scheme: dark) {
-    :root { --bg: #0d1117; --fg: #e6edf3; --muted: #8d96a0; --line: #30363d; --accent: #4493f8; }
-  }
+  :root { --bg: #fff; --line-subtle: #ebebeb; --ink: #1a1a1a; --accent-pink: #d07;
+          --font-sans: "Geist", system-ui, -apple-system, sans-serif;
+          --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, monospace; }
   html, body { height: 100%; margin: 0; }
-  body { display: flex; flex-direction: column; background: var(--bg); color: var(--fg);
-         font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; }
-  nav { display: flex; gap: 4px; align-items: center; padding: 0 16px; min-height: 44px;
-        border-bottom: 1px solid var(--line); overflow-x: auto; }
-  nav strong { margin-right: 12px; white-space: nowrap; }
-  nav a { padding: 12px 10px; color: var(--muted); text-decoration: none; white-space: nowrap;
-          border-bottom: 2px solid transparent; }
-  nav a:hover { color: var(--fg); }
-  nav a[aria-current="page"] { color: var(--fg); border-bottom-color: var(--accent); }
-  iframe { flex: 1; width: 100%; border: 0; }
+  body { display: flex; flex-direction: column; background: var(--bg); color: var(--ink);
+         font-family: var(--font-sans); }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 16px;
+           min-height: 58px; padding: 0 48px; border-bottom: 1px solid var(--line-subtle);
+           background: var(--bg); }
+  .wordmark { font: 400 12px var(--font-mono); letter-spacing: .12em; text-transform: uppercase;
+              color: var(--ink); text-decoration: none; white-space: nowrap; }
+  nav { display: flex; gap: 28px; overflow-x: auto; }
+  nav a { font-size: 13px; font-weight: 400; color: var(--accent-pink); text-decoration: none;
+          white-space: nowrap; padding: 4px 0; border-bottom: 1px solid transparent; }
+  nav a:hover, nav a[aria-current="page"] { border-bottom-color: var(--accent-pink); }
+  nav a[aria-current="page"] { font-weight: 500; }
+  iframe { flex: 1; width: 100%; border: 0; background: var(--bg); }
+  /* phones: name and tabs stack instead of the tabs scrolling out of view */
+  @media (max-width: 640px) { header { flex-wrap: wrap; row-gap: 6px; padding: 10px 16px; }
+                              nav { gap: 18px; } }
 </style>
 </head>
 <body>
-<nav>
-  <strong>Projects</strong>
-  <a href="#india" data-src="india/">India EcoPolitical</a>
-  <a href="#tickets" data-src="tickets/">Ticket Classifier</a>
-</nav>
+<header>
+  <a class="wordmark" href="https://karthikiyer.info">Karthik Iyer · Projects</a>
+  <nav>
+    <a href="#india" data-src="india/">India EcoPolitical</a>
+    <a href="#tickets" data-src="tickets/">Ticket Classifier</a>
+  </nav>
+</header>
 <iframe title="Project"></iframe>
 <script>
   // The URL hash picks the tab, so each project has a shareable link (/Live/#tickets).
