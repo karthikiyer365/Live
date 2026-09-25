@@ -1,5 +1,5 @@
 # Builds the project site and publishes it to GitHub Pages:
-#   /          site/index.html — top bar that switches between projects
+#   /          site/index.html — landing page + header that switches between projects
 #   /india/    India EcoPolitical dashboard, exported to WebAssembly
 #   /tickets/  topic-classification notebook, rendered to HTML (no code)
 #
@@ -81,8 +81,8 @@ jobs:
             --output-dir _site/tickets --output index
           sed -i 's#</head>#<link rel="stylesheet" href="../notebook.css"></head>#' _site/tickets/index.html
 
-      - name: Add site shell (top bar + notebook fonts)
-        run: cp site/index.html site/notebook.css _site/
+      - name: Add site shell (landing page, header, notebook fonts, images)
+        run: cp -r site/. _site/
 
       - name: Report bundle size
         run: du -sh _site && find _site -type f | wc -l

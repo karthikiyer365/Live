@@ -1,57 +1,187 @@
 <!doctype html>
-<!-- Site shell: a top bar that switches between projects. Each project is built into its own
-     folder by .github/workflows/deploy-dashboard.yml and shown untouched in the frame below.
-     Add a project = one <a> in the nav + one build step in the workflow.
-     Look follows writing.karthikiyer.info: white, Geist, pink accent (#d07). -->
+<!-- Site shell for projects.karthikiyer.info.
+     No hash / #all-projects -> landing page. #<project id> -> that project in the frame.
+     Add a project = one entry in PROJECTS below + one build step in .github/workflows/deploy-dashboard.yml.
+     Header mirrors writing.karthikiyer.info (keep in sync by hand): row 1 58px, row 2 42px, 48px side
+     padding, 12px Geist Mono name, 13px Geist links, pink #d07 = current, grey #767676 = not current. -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Karthik Iyer — Projects</title>
+<title>Weekend at Karthik's — Karthik Iyer</title>
+<meta name="description" content="Things I built to answer a question with data: a support ticket classifier and a dashboard of India's economic and political growth.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://projects.karthikiyer.info/">
+<meta property="og:title" content="Weekend at Karthik's — Karthik Iyer">
+<meta property="og:description" content="Things I built to answer a question with data.">
+<meta property="og:image" content="https://projects.karthikiyer.info/img/india-ecopolitical.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
 <style>
-  :root { --bg: #fff; --line-subtle: #ebebeb; --ink: #1a1a1a; --accent-pink: #d07;
+  /* Header + landing dimensions match writing.karthikiyer.info exactly (see the spec in the header comment). */
+  :root { --bg: #fff; --surface-1: #fafafa; --line-subtle: #ebebeb; --line: #e0e0e0;
+          --ink: #1a1a1a; --ink-secondary: #5c5c5c; --ink-muted: #6b6b6b; --ink-faint: #9b9b9b;
+          --ink-quiet: #767676; /* not-current links: 4.5:1 on white */
+          --accent-pink: #d07; --accent-teal: #0b7c66;
           --font-sans: "Geist", system-ui, -apple-system, sans-serif;
           --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, monospace; }
   html, body { height: 100%; margin: 0; }
-  body { display: flex; flex-direction: column; background: var(--bg); color: var(--ink);
-         font-family: var(--font-sans); }
-  header { display: flex; align-items: center; justify-content: space-between; gap: 16px;
-           min-height: 58px; padding: 0 48px; border-bottom: 1px solid var(--line-subtle);
-           background: var(--bg); }
-  .wordmark { font: 400 12px var(--font-mono); letter-spacing: .12em; text-transform: uppercase;
-              color: var(--ink); text-decoration: none; white-space: nowrap; }
-  nav { display: flex; gap: 28px; overflow-x: auto; }
-  nav a { font-size: 13px; font-weight: 400; color: var(--accent-pink); text-decoration: none;
-          white-space: nowrap; padding: 4px 0; border-bottom: 1px solid transparent; }
-  nav a:hover, nav a[aria-current="page"] { border-bottom-color: var(--accent-pink); }
-  nav a[aria-current="page"] { font-weight: 500; }
+  body { display: flex; flex-direction: column; background: var(--bg); color: var(--ink); font-family: var(--font-sans);
+         -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+  a { text-decoration: none; }
+  a:focus-visible { outline: 2px solid var(--accent-pink); outline-offset: 3px; border-radius: 2px; }
+
+  /* header */
+  header { flex: none; background: var(--bg); }
+  .row { display: flex; align-items: center; gap: 30px; padding: 0 48px; border-bottom: 1px solid var(--line-subtle); }
+  .row-1 { height: 58px; box-sizing: border-box; justify-content: space-between; }
+  .row-2 { height: 42px; box-sizing: border-box; overflow-x: auto; scrollbar-width: none; } /* swipe on phones, no bar */
+  .row-2::-webkit-scrollbar { display: none; }
+  .wordmark { font: 400 12px var(--font-mono); letter-spacing: .09em; text-transform: uppercase; color: var(--ink); white-space: nowrap; }
+  .sites { display: flex; gap: 30px; }
+  .sites a { font-size: 13px; font-weight: 400; color: var(--ink-secondary); white-space: nowrap; }
+  .sites a[aria-current] { color: var(--accent-pink); font-weight: 500; }
+  .label { font: 500 10px var(--font-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint); white-space: nowrap; }
+  .latest { display: flex; gap: 30px; }
+  .latest a, .all { font-size: 13px; font-weight: 400; color: var(--ink-quiet); white-space: nowrap;
+                    padding: 4px 0; border-bottom: 1px solid transparent; }
+  .latest a { max-width: 32ch; overflow: hidden; text-overflow: ellipsis; }
+  .latest a[aria-current], .all[aria-current] { color: var(--accent-pink); font-weight: 500; border-bottom-color: var(--accent-pink); }
+  .all { margin-left: auto; }
+  .latest a:hover, .all:hover, .sites a:hover { color: var(--accent-pink); }
+
+  /* landing page */
+  #landing { flex: 1; overflow-y: auto; scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { #landing { scroll-behavior: auto; } }
+  .content { max-width: 1000px; box-sizing: border-box; margin: 0 auto; padding: 52px 48px 112px; }
+  .hero h1 { font-size: 42px; font-weight: 600; letter-spacing: -.025em; line-height: 1.1; margin: 0 0 12px; text-wrap: balance; }
+  .hero p { margin: 0 0 40px; font-size: 17px; line-height: 1.6; color: var(--ink-secondary); max-width: 620px; }
+  .list-head { display: flex; align-items: baseline; justify-content: space-between; padding-bottom: 8px; margin-bottom: 24px;
+               border-bottom: 1px solid var(--line-subtle); scroll-margin-top: 16px; }
+  .list-head h2 { font: 500 11px var(--font-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint); margin: 0; }
+  .list-head span { font: 400 11.5px var(--font-mono); color: var(--ink-faint); }
+  .cards { display: grid; gap: 24px; }
+  .card { display: flex; gap: 32px; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .thumb { flex: none; width: 380px; box-sizing: border-box; display: block; background: var(--surface-1); border-right: 1px solid var(--line-subtle); overflow: hidden; }
+  .thumb img { width: 100%; height: 100%; object-fit: cover; object-position: top left; display: block; }
+  .text { flex: 1; min-width: 0; padding: 34px 34px 34px 0; display: flex; flex-direction: column; gap: 13px; }
+  .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font: 400 11px var(--font-mono); color: var(--ink-muted); }
+  .kind { font: 400 10px var(--font-mono); letter-spacing: .11em; text-transform: uppercase; color: var(--accent-pink); }
+  .text h3 { font-size: 30px; font-weight: 600; letter-spacing: -.02em; line-height: 1.16; margin: 0; text-wrap: balance; }
+  .text h3 a { color: inherit; }
+  .text p { margin: 0; font-size: 15.5px; line-height: 1.6; color: var(--ink-secondary); }
+  .links { display: flex; flex-wrap: wrap; gap: 6px 20px; font-size: 13px; font-weight: 500; }
+  .links a { color: var(--accent-pink); }
+  .links a.other { color: var(--ink-secondary); }
+  footer { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px 16px; padding: 24px 48px;
+           border-top: 1px solid var(--line-subtle); font-size: 13px; color: var(--ink-secondary); }
+  footer a { color: var(--accent-teal); }
+
+  /* project view */
   iframe { flex: 1; width: 100%; border: 0; background: var(--bg); }
-  /* phones: name and tabs stack instead of the tabs scrolling out of view */
-  @media (max-width: 640px) { header { flex-wrap: wrap; row-gap: 6px; padding: 10px 16px; }
-                              nav { gap: 18px; } }
+
+  @media (max-width: 640px) {
+    .row { padding: 0 16px; gap: 18px; }
+    .row-1 { height: auto; min-height: 58px; flex-wrap: wrap; row-gap: 6px; padding-block: 10px; }
+    .sites, .latest { gap: 18px; }
+    .content { padding: 36px 16px 64px; }
+    .hero h1 { font-size: 32px; }
+    .card { flex-direction: column; gap: 0; }
+    .thumb { width: auto; max-height: 220px; border-right: 0; border-bottom: 1px solid var(--line-subtle); }
+    .text { padding: 22px 20px 24px; }
+    .text h3 { font-size: 24px; }
+    footer { padding: 18px 16px; }
+  }
 </style>
 </head>
 <body>
 <header>
-  <a class="wordmark" href="https://karthikiyer.info">Karthik Iyer · Projects</a>
-  <nav>
-    <a href="#india" data-src="india/">India EcoPolitical</a>
-    <a href="#tickets" data-src="tickets/">Ticket Classifier</a>
+  <div class="row row-1">
+    <a class="wordmark" href="#">Karthik Iyer</a>
+    <nav class="sites" aria-label="Sites">
+      <a href="https://writing.karthikiyer.info">Writing</a>
+      <a href="#" aria-current="page">Projects</a>
+      <a href="https://karthikiyer.info">Portfolio</a>
+    </nav>
+  </div>
+  <nav class="row row-2" aria-label="Latest projects">
+    <span class="label">Latest</span>
+    <div class="latest"></div>
+    <a class="all" href="#all-projects"></a>
   </nav>
 </header>
-<iframe title="Project"></iframe>
+
+<main id="landing">
+  <div class="content">
+    <div class="hero">
+      <h1>Weekend at Karthik's</h1>
+      <p>Things I built to answer a question with data.</p>
+    </div>
+    <div class="list-head" id="all-projects"><h2>All projects</h2><span></span></div>
+    <div class="cards"></div>
+  </div>
+  <footer><span>Karthik Iyer — data &amp; AI engineering</span><a href="https://karthikiyer.info">karthikiyer.info</a></footer>
+</main>
+
+<iframe title="Project" hidden></iframe>
+
 <script>
-  // The URL hash picks the tab, so each project has a shareable link (/Live/#tickets).
-  const links = [...document.querySelectorAll("nav a")];
-  const frame = document.querySelector("iframe");
+  // Newest first. The latest bar shows the first five; the landing page shows all.
+  const PROJECTS = [
+    { id: "tickets", src: "tickets/", short: "Ticket Classifier", name: "Support Ticket Classifier",
+      kind: "ML · NLP", date: "24 Sept 2026", img: "img/ticket-classifier.svg",
+      alt: "Diagram: ticket text goes into a TF-IDF and logistic regression model and is routed to Incident, Request, Problem or Change",
+      summary: "Routes a ticket by type from its text alone. 79.9% accuracy on a held-out test; tickets above 0.75 confidence (46% of them) are auto-routed at 96.4%.",
+      links: [["Read the notebook →", "#tickets"],
+              ["Read the post ↗", "https://writing.karthikiyer.info/the-model-was-fine-the-labels-werent/", "other"]] },
+    { id: "india", src: "india/", short: "India EcoPolitical", name: "India EcoPolitical Growth",
+      kind: "R · Shiny", date: "Aug 2026", img: "img/india-ecopolitical.png",
+      alt: "The India EcoPolitical dashboard: GDP and sector-share charts with a year-range slider",
+      summary: "64 indicators from World Bank, IMF and V-Dem, 1789–2031, asking what India's growth actually delivered across economy, state, society and politics.",
+      links: [["Open the dashboard →", "#india"]] },
+  ];
+
+  const $ = s => document.querySelector(s);
+  const esc = s => s.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+  $(".latest").innerHTML = PROJECTS.slice(0, 5).map(p => `<a href="#${p.id}" title="${esc(p.name)}">${esc(p.short)}</a>`).join("");
+  $(".list-head span").textContent = `${PROJECTS.length} project${PROJECTS.length === 1 ? "" : "s"}`;
+  $(".cards").innerHTML = PROJECTS.map(p => `
+    <article class="card">
+      <a class="thumb" href="#${p.id}" tabindex="-1" aria-hidden="true"><img src="${p.img}" alt="${esc(p.alt)}" loading="lazy"></a>
+      <div class="text">
+        <div class="meta"><span class="kind">${esc(p.kind)}</span><span>${esc(p.date)}</span></div>
+        <h3><a href="#${p.id}">${esc(p.name)}</a></h3>
+        <p>${esc(p.summary)}</p>
+        <div class="links">${p.links.map(([t, h, c]) => `<a href="${h}"${c ? ` class="${c}"` : ""}>${esc(t)}</a>`).join("")}</div>
+      </div>
+    </article>`).join("");
+
+  const landing = $("#landing"), frame = $("iframe"), all = $(".all");
+
   function show() {
-    const active = links.find(a => a.hash === location.hash) || links[0];
-    links.forEach(a => a === active ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current"));
-    if (frame.getAttribute("src") !== active.dataset.src) frame.src = active.dataset.src;
-    frame.title = active.textContent;
+    const id = location.hash.slice(1);
+    const project = PROJECTS.find(p => p.id === id);
+    document.querySelectorAll(".latest a").forEach(a =>
+      a.hash === "#" + id ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current"));
+
+    if (project) {
+      // The frame keeps its page while hidden, so going back to the same project is instant.
+      if (frame.getAttribute("src") !== project.src) frame.src = project.src;
+      frame.title = project.name;
+      frame.hidden = false; landing.hidden = true;
+      all.removeAttribute("aria-current"); all.textContent = "All projects →"; all.href = "#";
+      document.title = `${project.name} — Weekend at Karthik's`;
+    } else {
+      frame.hidden = true; landing.hidden = false;
+      all.setAttribute("aria-current", "page"); all.textContent = "All projects ↓"; all.href = "#all-projects";
+      document.title = "Weekend at Karthik's — Karthik Iyer";
+      if (id === "all-projects") $("#all-projects").scrollIntoView({ block: "start" });
+      else landing.scrollTop = 0;
+    }
   }
   addEventListener("hashchange", show);
   show();
