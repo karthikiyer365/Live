@@ -29,7 +29,9 @@
   nav a:hover, nav a[aria-current="page"] { border-bottom-color: var(--accent-pink); }
   nav a[aria-current="page"] { font-weight: 500; }
   iframe { flex: 1; width: 100%; border: 0; background: var(--bg); }
-  @media (max-width: 640px) { header { padding: 0 16px; } nav { gap: 18px; } }
+  /* phones: name and tabs stack instead of the tabs scrolling out of view */
+  @media (max-width: 640px) { header { flex-wrap: wrap; row-gap: 6px; padding: 10px 16px; }
+                              nav { gap: 18px; } }
 </style>
 </head>
 <body>

@@ -10,3 +10,11 @@
   --jp-layout-color0: #fff;
 }
 body { background: #fff; color: #1a1a1a; }
+
+/* Jupyter sets word-break:break-all on output text, which splits words mid-way on
+   narrow screens ("Digita / l"). Wrap at spaces; break a word only if it can't fit. */
+.jp-OutputArea-output pre { word-break: normal; overflow-wrap: anywhere; }
+
+/* pandas right-aligns every cell; most tables here hold text, which reads ragged. */
+.jp-RenderedHTMLCommon table.dataframe td,
+.jp-RenderedHTMLCommon table.dataframe th { text-align: left; }
