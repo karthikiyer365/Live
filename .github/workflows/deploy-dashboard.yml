@@ -79,9 +79,10 @@ jobs:
           jupyter nbconvert --to html --no-input \
             topic-classification/department_classifier_pipeline.ipynb \
             --output-dir _site/tickets --output index
+          sed -i 's#</head>#<link rel="stylesheet" href="../notebook.css"></head>#' _site/tickets/index.html
 
-      - name: Add site shell (top bar)
-        run: cp site/index.html _site/
+      - name: Add site shell (top bar + notebook fonts)
+        run: cp site/index.html site/notebook.css _site/
 
       - name: Report bundle size
         run: du -sh _site && find _site -type f | wc -l

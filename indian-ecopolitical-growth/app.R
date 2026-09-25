@@ -297,7 +297,7 @@ nav_labels <- NULL  # replaced by tabs
 
 css <- sprintf("
   body, .bslib-page-sidebar { background:%s; color:%s; }
-  .display { font-family:'Newsreader',Georgia,serif; font-weight:400; letter-spacing:-.01em; }
+  .display { font-family:'Geist',system-ui,sans-serif; font-weight:400; letter-spacing:-.01em; }
   .brand   { font-size:1.3rem; line-height:1.15; color:%s; margin-bottom:2px; }
   .brand-sub { font-size:.7rem; color:%s; letter-spacing:.06em; text-transform:uppercase; }
 
@@ -319,10 +319,10 @@ css <- sprintf("
   @media (max-width:1100px) { .grid { grid-template-columns:1fr; }
                               .cell-2 { grid-column:auto; } }
 
-  .c-title { font-family:'Newsreader',Georgia,serif; font-size:1.12rem; line-height:1.3;
+  .c-title { font-family:'Geist',system-ui,sans-serif; font-size:1.12rem; line-height:1.3;
              color:%s; margin:0 0 5px; }
   .c-note  { font-size:.78rem; color:%s; line-height:1.45; margin:0 0 8px; }
-  .c-find  { font-family:'Newsreader',Georgia,serif; font-size:.99rem; line-height:1.4;
+  .c-find  { font-family:'Geist',system-ui,sans-serif; font-size:.99rem; line-height:1.4;
              color:%s; margin-top:9px; border-left:2px solid %s; padding-left:11px; }
   .c-cav   { font-size:.72rem; color:%s; line-height:1.4; margin-top:7px; }
   .irs-bar, .irs-handle>i:first-child { background:%s !important; border-color:%s !important; }
@@ -350,8 +350,8 @@ tab_panel <- function(tab) {
 
 ui <- page_sidebar(
   theme = bs_theme(version = 5, bg = PAL$page, fg = PAL$ink, primary = PAL$s1,
-                   base_font = font_google("Inter", local = FALSE),
-                   heading_font = font_google("Newsreader", local = FALSE)),
+                   base_font = font_google("Geist", local = FALSE),
+                   heading_font = font_google("Geist", local = FALSE)),
   tags$head(tags$style(HTML(css))),
 
   # shinylive serves plotly's JS out of the WASM filesystem, so `crosstalk` and

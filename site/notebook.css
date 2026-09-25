@@ -1,0 +1,12 @@
+/* Font override for nbconvert pages (linked in by deploy-dashboard.yml) so rendered
+   notebooks read like writing.karthikiyer.info. Chart text is baked into the PNGs
+   by matplotlib and does not change. */
+@import url("https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap");
+
+:root {
+  --jp-ui-font-family: "Geist", system-ui, -apple-system, sans-serif;
+  --jp-content-font-family: "Geist", system-ui, -apple-system, sans-serif;
+  --jp-code-font-family: "Geist Mono", ui-monospace, SFMono-Regular, monospace;
+  --jp-layout-color0: #fff;
+}
+body { background: #fff; color: #1a1a1a; }

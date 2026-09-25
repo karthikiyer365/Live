@@ -5,6 +5,7 @@
 # through the dataviz validator:
 #
 #   light  cat 1-3 vs #f9f9f7 : CVD dE 9.2 (deutan), normal 27.6  PASS
+#                               (page is now #fff — contrast only rises)
 #                               aqua #1baf7a 2.67:1 -> WARN, labels required
 #   dark   cat 1-3 vs #1a1a19 : CVD dE 9.4 (deutan), normal 26.5  PASS
 #                               all three clear 3:1                PASS
@@ -12,14 +13,14 @@
 #                               single hue (4 deg spread)          PASS
 #
 # Flip the whole app with this one constant.
-MODE <- "dark"
+MODE <- "light"  # white site shell (site/index.html) — matches writing.karthikiyer.info
 
 .pal <- list(
   light = list(
     s1 = "#2a78d6", s2 = "#eb6834", s3 = "#1baf7a", s4 = "#eda100",
     div_pos = "#2a78d6", div_neg = "#eb6834",
     seq = c("#cde2fb", "#9ec5f4", "#6da7ec", "#3987e5", "#256abf", "#184f95", "#0d366b"),
-    surface = "#fcfcfb", page = "#f9f9f7", panel = "#ffffff",
+    surface = "#fcfcfb", page = "#ffffff", panel = "#ffffff",
     ink = "#0b0b0b", ink_2 = "#52514e", muted = "#898781",
     grid = "#e1e0d9", baseline = "#c3c2b7", gray_ctx = "#c3c2b7",
     hover_bg = "#ffffff", hairline = "rgba(11,11,11,0.10)",
@@ -50,7 +51,7 @@ style_plot <- function(p, ylab = "", xlab = "", legend = TRUE, hovermode = "x un
     # borderless: the plot sits directly on the page plane
     paper_bgcolor = "rgba(0,0,0,0)",
     plot_bgcolor  = "rgba(0,0,0,0)",
-    font   = list(family = "system-ui, -apple-system, Segoe UI, sans-serif",
+    font   = list(family = "Geist, system-ui, -apple-system, Segoe UI, sans-serif",
                   size = 12, color = PAL$ink_2),
     margin = margin,
     hovermode = hovermode,
