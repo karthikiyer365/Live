@@ -1,0 +1,49 @@
+<!doctype html>
+<!-- Site shell: a top bar that switches between projects. Each project is built into its own
+     folder by .github/workflows/deploy-dashboard.yml and shown untouched in the frame below.
+     Add a project = one <a> in the nav + one build step in the workflow. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Karthik Iyer — Projects</title>
+<style>
+  :root { --bg: #ffffff; --fg: #1f2328; --muted: #656d76; --line: #d0d7de; --accent: #0969da; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #0d1117; --fg: #e6edf3; --muted: #8d96a0; --line: #30363d; --accent: #4493f8; }
+  }
+  html, body { height: 100%; margin: 0; }
+  body { display: flex; flex-direction: column; background: var(--bg); color: var(--fg);
+         font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  nav { display: flex; gap: 4px; align-items: center; padding: 0 16px; min-height: 44px;
+        border-bottom: 1px solid var(--line); overflow-x: auto; }
+  nav strong { margin-right: 12px; white-space: nowrap; }
+  nav a { padding: 12px 10px; color: var(--muted); text-decoration: none; white-space: nowrap;
+          border-bottom: 2px solid transparent; }
+  nav a:hover { color: var(--fg); }
+  nav a[aria-current="page"] { color: var(--fg); border-bottom-color: var(--accent); }
+  iframe { flex: 1; width: 100%; border: 0; }
+</style>
+</head>
+<body>
+<nav>
+  <strong>Projects</strong>
+  <a href="#india" data-src="india/">India EcoPolitical</a>
+  <a href="#tickets" data-src="tickets/">Ticket Classifier</a>
+</nav>
+<iframe title="Project"></iframe>
+<script>
+  // The URL hash picks the tab, so each project has a shareable link (/Live/#tickets).
+  const links = [...document.querySelectorAll("nav a")];
+  const frame = document.querySelector("iframe");
+  function show() {
+    const active = links.find(a => a.hash === location.hash) || links[0];
+    links.forEach(a => a === active ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current"));
+    if (frame.getAttribute("src") !== active.dataset.src) frame.src = active.dataset.src;
+    frame.title = active.textContent;
+  }
+  addEventListener("hashchange", show);
+  show();
+</script>
+</body>
+</html>
