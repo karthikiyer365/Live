@@ -98,8 +98,10 @@ three will serve the 119 MB bundle.
 artifact rather than committing the build, so the 119 MB of generated webR assets never enters
 git history.
 
-It is still **manual-only** (`workflow_dispatch`). The chart blocker that originally justified
-that is fixed, so the commented-out `push` trigger is now safe to enable whenever you want
-every merge to main to republish — uncomment it and nothing else changes.
+It runs automatically on every push to `main` that changes the dashboard (`app.R`, `R/`,
+`data_processed/`), the topic-classification notebook, `site/`, or the workflow itself, so merging a
+PR republishes the site. Changes elsewhere (docs, raw data, scripts) don't trigger a deploy.
+To rebuild without a code change, run it by hand: Actions → Deploy dashboard → Run workflow, or
+`gh workflow run deploy-dashboard.yml --ref main`.
 
 Live at <https://projects.karthikiyer.info/#india> — served from `/india/` and opened from the projects landing page (`site/index.html`). The old `karthikiyer365.github.io/Live/` address redirects there.

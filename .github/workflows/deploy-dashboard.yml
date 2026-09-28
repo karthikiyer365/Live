@@ -9,20 +9,19 @@
 
 name: Deploy dashboard
 
-# MANUAL ONLY. The plotly-blank-charts blocker that originally forced this is fixed,
-# so the push trigger below is safe to uncomment whenever every merge to main should
-# republish — left off so publishing stays a deliberate act. See docs/DEPLOYMENT.md.
+# Republishes on every merge to main that touches something the site is built from.
+# The manual button stays for rebuilding without a code change. See docs/DEPLOYMENT.md.
 on:
   workflow_dispatch:
-  # push:
-  #   branches: [main]
-  #   paths:
-  #     - 'indian-ecopolitical-growth/app.R'
-  #     - 'indian-ecopolitical-growth/R/**'
-  #     - 'indian-ecopolitical-growth/data_processed/**'
-  #     - 'topic-classification/*.ipynb'
-  #     - 'site/**'
-  #     - '.github/workflows/deploy-dashboard.yml' 
+  push:
+    branches: [main]
+    paths:
+      - 'indian-ecopolitical-growth/app.R'
+      - 'indian-ecopolitical-growth/R/**'
+      - 'indian-ecopolitical-growth/data_processed/**'
+      - 'topic-classification/*.ipynb'
+      - 'site/**'
+      - '.github/workflows/deploy-dashboard.yml'
 
 permissions:
   contents: read
