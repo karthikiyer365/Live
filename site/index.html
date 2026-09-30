@@ -9,7 +9,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Weekend at Karthik's — Karthik Iyer</title>
-<meta name="description" content="Things I built to answer a question with data: a support ticket classifier and a dashboard of India's economic and political growth.">
+<meta name="description" content="Things I built to answer a question with data: an e-commerce sales dashboard, a support ticket classifier and a dashboard of India's economic and political growth.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://projects.karthikiyer.info/">
 <meta property="og:title" content="Weekend at Karthik's — Karthik Iyer">
@@ -131,6 +131,11 @@
 <script>
   // Newest first. The latest bar shows the first five; the landing page shows all.
   const PROJECTS = [
+    { id: "sales", src: "sales/", short: "Sales Dashboard", name: "E-commerce Sales Dashboard",
+      kind: "Python · Shiny", date: "30 Sept 2026", img: "img/sales-dashboard.png",
+      alt: "The sales dashboard: revenue share vs unit share by category, and a curve showing 154 of 320 products make 80% of revenue",
+      summary: "Five questions a sales manager asks of 131 weeks of product sales. Promotions lose revenue in 6 of 8 categories, stockouts cost 3.9% of revenue, and a sales-only rule spots dying products about 4 weeks before they go.",
+      links: [["Open the dashboard →", "#sales"]] },
     { id: "tickets", src: "tickets/", short: "Ticket Classifier", name: "Support Ticket Classifier",
       kind: "ML · NLP", date: "24 Sept 2026", img: "img/ticket-classifier.svg",
       alt: "Diagram: ticket text goes into a TF-IDF and logistic regression model and is routed to Incident, Request, Problem or Change",

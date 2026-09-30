@@ -1,0 +1,9 @@
+Jinja2==3.1.6
+numpy==2.4.6
+pandas==3.0.6
+plotly==7.1.0
+shiny==1.8.0
+shinylive==0.8.12
+shinywidgets==0.8.1
+ipykernel
+nbclient

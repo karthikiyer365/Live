@@ -2,6 +2,7 @@
 #   /          site/index.html — landing page + header that switches between projects
 #   /india/    India EcoPolitical dashboard, exported to WebAssembly
 #   /tickets/  topic-classification notebook, rendered to HTML (no code)
+#   /sales/    e-commerce sales dashboard (Shiny for Python), exported to WebAssembly
 #
 # Why an Action rather than committing the build: the shinylive export is ~119MB
 # of generated webR runtime and package binaries. That belongs in a Pages
@@ -20,6 +21,8 @@ on:
       - 'indian-ecopolitical-growth/R/**'
       - 'indian-ecopolitical-growth/data_processed/**'
       - 'topic-classification/*.ipynb'
+      - 'ecommerce-sales-dashboard/app.py'
+      - 'ecommerce-sales-dashboard/data/**'
       - 'site/**'
       - '.github/workflows/deploy-dashboard.yml'
 
@@ -79,6 +82,15 @@ jobs:
             topic-classification/department_classifier_pipeline.ipynb \
             --output-dir _site/tickets --output index
           sed -i 's#</head>#<link rel="stylesheet" href="../notebook.css"></head>#' _site/tickets/index.html
+
+      # Only the app and its CSV are staged: the notebook, venv and data dictionary stay out of the bundle.
+      - name: Export sales dashboard to WebAssembly
+        run: |
+          pip install shinylive==0.8.12
+          mkdir -p stage-sales/data
+          cp ecommerce-sales-dashboard/app.py stage-sales/
+          cp ecommerce-sales-dashboard/data/ecommerce_demand_weekly.csv stage-sales/data/
+          shinylive export stage-sales _site/sales
 
       - name: Add site shell (landing page, header, notebook fonts, images)
         run: cp -r site/. _site/
