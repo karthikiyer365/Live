@@ -11,15 +11,17 @@ that runs in the browser (WebAssembly, no server) on [projects.karthikiyer.info]
 
 | Tab | Question | Finding |
 |---|---|---|
-| Revenue | Where does revenue come from? | Electronics is 12.5% of products and 36% of revenue. Grocery moves 26% of units for 8% of revenue. Per product, 2024 was flat (+0.8%). |
-| Seasonality | When are the peaks, what is shifting? | Every category peaks in November (toys at 1.94× a normal month) and bottoms out in July. Beauty fell 21.6% per product-week in 2024, apparel grew 9.3%. |
-| Promotions | Do promos pay off? | A 25% discount needs +33% units. Only electronics (+57%) and toys (+53%) clear it; grocery loses 18.8% of revenue on promo. |
-| Stockouts | What did running out cost? | $1.71M, 3.9% of revenue. Stockouts are random one-week gaps (~4.3% everywhere), so the loss follows price. |
-| Product health | Which products are dying? | Last 4 weeks ÷ prior 12, seasonality removed. Below 0.6 flags a drop candidate: right 98% of the time, about 4 weeks before the product goes. |
+| Revenue | Where does revenue come from? | Electronics is 12.5% of products and 36% of revenue. Grocery moves 26% of units for 8% of revenue. Mature products earned 1.9% less per week in 2024. Top-N products table with revenue per week on sale. |
+| Seasonality | When are the peaks, what is shifting? | Every category peaks in November (toys at 1.94× a normal month) and bottoms out in July. Beauty fell 21.6% per mature product-week in 2024, apparel grew 9.3%. |
+| Promotions | Do promos pay off? | A 25% discount needs +33% units. Only 2 of 8 categories clearly pay: electronics (+57% units) and toys (+53%). Grocery loses 18.8% of revenue on promo. |
+| Stockouts | What did running out cost, and what to protect? | $1.71M, 3.9% of revenue. Stockouts are random one-week gaps (~4.3% everywhere), so cost follows price × demand. Protect-first list: one stockout week of ELE-1006 costs ~$12k. |
+| Product health | Which products are dying? | Last 4 weeks ÷ prior 12, seasonality removed. Below 0.6 flags a drop candidate: right 97% (2023) and 98% (2024) of the time, about 4 weeks before the product goes. |
 
 ## Traps the numbers avoid
 
-- **Catalog size.** Products on sale swing from 4 to 301 a week, so every trend and growth figure is per product-week. Raw totals showed +7.8% growth; per product it is +0.8%.
+- **Catalog size.** Products on sale swing from 4 to 301 a week, so every trend and growth figure is per product-week. Raw totals showed +7.8% growth.
+- **Lifecycle mix.** Per product-week is still not like-for-like: 2023 was 14.7% low-selling launch weeks, 2024 10.1% declining weeks. The all-week average said +0.8%; mature products only, it is −1.9%. Year-on-year numbers use mature weeks.
+- **Lifespan in totals.** Products sell for 30 to 130 weeks, so total revenue partly measures how long a product lived. The top-products table shows revenue per week on sale next to the total.
 - **Season vs promo.** Promo and regular weeks are compared within the same product and month.
 - **Stockouts as fake decline.** Stockout weeks are skipped in the product-health ratio.
 - **Post-Black-Friday drop.** Seasonality is removed by week of year; a monthly factor flagged 32 healthy products in late December, weekly flags 6.

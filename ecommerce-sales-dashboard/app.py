@@ -17,7 +17,6 @@ GOOD, WARN, CRIT = "#0ca30c", "#b87d00", "#d03b3b"
 FONT = "Geist, system-ui, -apple-system, sans-serif"
 
 WATCH, DROP = 0.8, 0.6          # product-health ratio thresholds, graded in explore.ipynb
-BREAK_EVEN = 1 / 0.75 - 1       # a 25% discount needs +33% units to keep revenue flat
 MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
 
@@ -54,13 +53,26 @@ DATES = [d.date() for d in sorted(DF.date.drop_duplicates())]  # plain dates: wh
 _m = DF.groupby(["category", "month"]).agg(units=("units_sold", "sum"), sku_weeks=("sku", "size"))
 SEASON = (_m.units / _m.sku_weeks / (_m.units / _m.sku_weeks).groupby("category").transform("mean")).unstack("month")
 
-_mature = DF[(DF.is_new_launch == 0) & (DF.is_declining == 0) & DF.year.isin([2023, 2024])]
-_gm = _mature.groupby(["category", "year"]).units_sold.mean().unstack()
+# Year-on-year comparisons use mature weeks only: 2023 is full of low-selling launch weeks (14.7%) and
+# 2024 of declining ones (10.1%), so all-week averages measure the lifecycle mix, not how products sold.
+MATURE = DF[(DF.is_new_launch == 0) & (DF.is_declining == 0)]
+_gm = MATURE[MATURE.year.isin([2023, 2024])].groupby(["category", "year"]).units_sold.mean().unstack()
 GROWTH = _gm[2024] / _gm[2023] - 1
 
 # Promo vs regular weeks of the same product in the same month; only product-months that had both.
-PROMO_CELLS = DF.groupby(["sku", "ym", "on_promo"])[["units_sold", "price", "revenue"]].mean().unstack("on_promo").dropna()
-PROMO_CELLS["category"] = DF.drop_duplicates("sku").set_index("sku").category.reindex(PROMO_CELLS.index.get_level_values("sku")).values
+PROMO_CELLS = DF.groupby(["category", "sku", "ym", "on_promo"])[["units_sold", "price", "revenue"]].mean().unstack("on_promo").dropna()
+
+# Protect first: what one stockout week would cost each product still on sale, at its typical (deseasoned) demand
+# over the last 12 weeks and its regular price. A stockout week loses about 86% of demand (explore.ipynb).
+_live = DF[DF.sku.isin(DF[DF.date == DF.date.max()].sku) & (DF.date > DF.date.max() - pd.Timedelta(weeks=12))]
+LIVE = _live.groupby(["sku", "category", "region"]).agg(
+    weekly_units=("deseasoned", "mean"), price=("price", "max")).reset_index()  # max price = regular, not promo
+_out = DF[DF.stockout == 1]
+LOSS_SHARE = 1 - _out.units_sold.sum() / _out.true_demand.sum()
+STOCKOUT_RATE = DF.stockout.mean()
+_rr = DF.groupby("category").returns.sum() / DF.groupby("category").units_sold.sum()
+LIVE["per_stockout_week"] = LIVE.weekly_units * LOSS_SHARE * LIVE.price * (1 - LIVE.category.map(_rr))
+LIVE["per_year"] = LIVE.per_stockout_week * 52 * STOCKOUT_RATE
 
 
 def promo_lift(cells: pd.DataFrame) -> pd.Series:
@@ -77,6 +89,10 @@ def money(v: float) -> str:
 
 def verdict(rev_change: float) -> tuple[str, str]:
     return ("good", "Pays") if rev_change > 0.08 else ("warn", "Barely") if rev_change > 0 else ("crit", "Loses")
+
+
+def take(text: str):
+    return ui.p(text, class_="take")
 
 
 # ---------- chart + UI helpers ----------
@@ -103,7 +119,7 @@ def pill(kind: str, text: str):
 
 
 CSS = f"""
-:root {{ --bs-primary: {PINK}; --bs-primary-rgb: 221, 0, 119; --bs-body-font-family: {FONT}; --pink: {PINK}; --teal: {TEAL}; --ink: {INK}; --ink-2: {INK2}; --ink-3: {INK3}; --line: {LINE}; --line-subtle: {GRID}; --surface: #fafafa; }}
+:root {{ --bs-primary: {PINK}; --bs-primary-rgb: 221, 0, 119; --bs-body-font-family: {FONT}; --pink: {PINK}; --ink: {INK}; --ink-2: {INK2}; --ink-3: {INK3}; --line: {LINE}; --line-subtle: {GRID}; }}
 body {{ background: #fff; color: var(--ink); font-family: {FONT}; -webkit-font-smoothing: antialiased; }}
 .container-fluid {{ max-width: 1160px; padding-inline: 32px; padding-block: 0 64px; }}
 header.top {{ display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 24px; padding-block: 22px 14px; }}
@@ -132,6 +148,9 @@ h1 {{ font-size: 26px; font-weight: 600; letter-spacing: -.02em; margin: 4px 0 0
 .panel {{ border: 1px solid var(--line); border-radius: 8px; padding: 14px 14px 6px; min-width: 0; }}
 .panel h3 {{ margin: 0 0 2px; font-size: 14px; font-weight: 600; }}
 .panel .sub {{ margin: 0 0 4px; font-size: 12.5px; color: var(--ink-3); }}
+.take {{ margin: 0; font-size: 15px; font-weight: 500; color: var(--ink); border-left: 3px solid var(--pink); padding: 2px 0 2px 12px; max-width: 80ch; }}
+.topn {{ display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--ink-2); }}
+.topn .shiny-input-container {{ width: 80px !important; margin: 0; }}
 .note {{ font-size: 12.5px; color: var(--ink-2); border-left: 2px solid var(--line); padding-left: 10px; margin: 0; line-height: 1.5; }}
 .tablewrap {{ overflow-x: auto; }}
 table.t {{ width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }}
@@ -163,54 +182,62 @@ app_ui = ui.page_fluid(
     ui.navset_underline(
         ui.nav_panel("Revenue", ui.div(
             ui.h2("Where does revenue come from?", class_="q"),
+            ui.output_ui("rev_take"),
             ui.output_ui("rev_kpis"),
             ui.div(
                 panel("Revenue share vs unit share", "Share of the selected categories. A long teal bar next to a short pink one means lots of boxes, little money.", output_widget("share")),
-                panel("How concentrated is revenue?", "Products ranked by revenue, cumulative share.", output_widget("pareto")),
+                panel("How concentrated is revenue?", "Products ranked by total revenue, cumulative share. The dot marks your top N.",
+                      ui.div(ui.span("Top"), ui.input_numeric("top_n", None, 10, min=1, max=320, step=1), ui.span("products"), class_="topn"),
+                      output_widget("pareto")),
                 class_="grid2"),
-            ui.p("Growth is per product-week. The number of products on sale swung from 4 to 301 a week, so raw totals mostly track catalog size.", class_="note"),
+            panel("Top products", "Products sell for 30 to 130 weeks, so a long-lived product can top the total without selling faster. Revenue per week on sale shows which ones actually sell fastest.",
+                  ui.output_ui("top_table")),
+            ui.p("Growth compares mature products only (no launch ramp, no decline). 2023 was full of low-selling launch weeks and 2024 of declining ones, so an all-week average would show +0.8% where the same products actually sold 1.9% less.", class_="note"),
             class_="page")),
         ui.nav_panel("Seasonality", ui.div(
             ui.h2("When are the peaks, and what is shifting?", class_="q"),
+            ui.output_ui("season_take"),
             panel("Seasonal index by category and month", "1.00 = a normal month for that category. Pink = busier, teal = quieter.", output_widget("heat")),
             ui.div(
-                panel("Weekly units per product on sale", "Top: units per active product. Bottom: how many products were on sale.", output_widget("weekly")),
-                panel("Growth, 2024 vs 2023", "Units per product-week, mature weeks only (no launch ramp, no decline).", output_widget("growth")),
+                panel("Weekly units per product, 2023 vs 2024", "Units per product per week, mature products only, by week of the year. Shows when the peak starts and whether this year ran ahead of last.", output_widget("weekly")),
+                panel("Growth of mature products, 2024 vs 2023", "Units per product-week, no launch ramp, no decline.", output_widget("growth")),
                 class_="grid2"),
             class_="page")),
         ui.nav_panel("Promotions", ui.div(
             ui.h2("Do promotions pay off?", class_="q"),
+            ui.output_ui("promo_take"),
             ui.p("A promo takes 25% off. Revenue only grows if units rise by more than 33%. Each category compares promo weeks with regular weeks of the same product in the same month.", class_="lede"),
             ui.output_ui("promo_kpis"),
-            ui.div(
-                panel("Unit uplift vs revenue change", "Right of the dotted line: enough extra units to cover the discount.", output_widget("promo")),
-                panel("Verdict by category", None, ui.output_ui("promo_table")),
-                class_="grid2"),
+            panel("Revenue change in promo weeks", "Sorted from best to worst. The label shows how much units rose to get there.", output_widget("promo")),
             ui.p("Revenue is not profit. There is no cost data, so a promo that grows revenue can still lose margin.", class_="note"),
             class_="page")),
         ui.nav_panel("Stockouts", ui.div(
             ui.h2("What did running out of stock cost us?", class_="q"),
+            ui.output_ui("so_take"),
             ui.output_ui("so_kpis"),
             ui.div(
                 panel("Revenue lost by category", "Lost units × that week's price, net of the category's return rate.", output_widget("lost")),
-                panel("Stockout rate by month", "Flat means no season to prepare for.", output_widget("so_month")),
+                panel("Cost of one stockout week, per product on sale", "One dot per product still on sale. Stockouts hit every product at about the same rate, so the cost is set by price and demand.", output_widget("so_cost")),
                 class_="grid2"),
-            panel("Hardest-hit products", None, ui.output_ui("so_table")),
-            ui.p("Stockouts here are random one-week supply gaps at about 4.3% everywhere. Money lost follows price: an electronics unit is worth $175, a grocery unit $15.", class_="note"),
+            panel("Protect first", "Products still on sale, ranked by what one stockout week would cost: typical weekly demand (seasonality removed) × 86% lost × regular price, net of returns. Per year assumes the usual 4.3% of weeks out of stock.",
+                  ui.output_ui("so_table")),
             class_="page")),
         ui.nav_panel("Product health", ui.div(
             ui.h2("Which products are dying?", class_="q"),
+            ui.output_ui("health_take"),
             ui.p(f"Sales in the last 4 weeks divided by the 12 weeks before, after removing the seasonal pattern and skipping stockout weeks. "
-                 f"Below {WATCH} goes on watch. Below {DROP} is a drop candidate, which historically was right 98% of the time with about 4 weeks' notice.", class_="lede"),
-            panel("As of week", None,
+                 f"Below {WATCH} goes on watch. Below {DROP} is a drop candidate.", class_="lede"),
+            panel("As of week", "Move back in time to see what the list would have said then.",
                   ui.input_slider("week", None, min=DATES[16], max=DATES[-1], value=DATES[-1], step=7, time_format="%d %b %Y", width="100%"),
                   ui.output_ui("tiers")),
             ui.div(
-                panel("Flagged products", "Select a row to see its trend. \"Actually dying\" comes from the dataset's hidden label, shown only to grade the rule.",
-                      ui.output_data_frame("health_table")),
+                panel("Flagged products", "Select a row to see its trend.", ui.output_data_frame("health_table")),
                 panel("Trend", "Top: units with seasonality removed. Bottom: the ratio, with watch and drop lines.",
                       ui.output_ui("sku_title"), output_widget("sku_trend")),
                 class_="grid2"),
+            ui.p("How reliable is this? The dataset has a hidden label marking each product's final decline. Graded against it, drop flags were right 97% of the time "
+                 "in 2023 and 98% in 2024, and all 163 retired products were flagged, typically 7 weeks into an 11-week decline, about 4 weeks before they left. "
+                 "Most false alarms fall in July, October and November, where the seasonal swing is steepest. Check a drop flag before acting.", class_="note"),
             class_="page")),
         id="tab",
         header=ui.div(ui.span("Category", class_="label"),
@@ -231,16 +258,35 @@ def server(input, output, session):
         return DF[DF.category.isin(cats())]
 
     # Revenue
+    @reactive.calc
+    def sku_rev() -> pd.DataFrame:
+        s = df().groupby(["sku", "category"]).agg(revenue=("revenue", "sum"), weeks=("date", "size")).reset_index()
+        s["per_week"] = s.revenue / s.weeks
+        return s.sort_values("revenue", ascending=False, ignore_index=True)
+
+    @reactive.calc
+    def top_n() -> int:
+        return max(1, min(int(input.top_n() or 10), len(sku_rev())))
+
+    @render.ui
+    def rev_take():
+        c = df().groupby("category").agg(revenue=("revenue", "sum"), units=("net_units", "sum"))
+        c = c / c.sum()
+        big, vol = c.revenue.idxmax(), c.units.idxmax()
+        if big == vol:
+            return take(f"{label(big).capitalize()} leads on both money and volume: {c.revenue[big]:.0%} of revenue, {c.units[big]:.0%} of units.")
+        return take(f"{label(big).capitalize()} makes the money ({c.revenue[big]:.0%} of revenue from {c.units[big]:.0%} of units). "
+                    f"{label(vol).capitalize()} moves the most boxes ({c.units[vol]:.0%} of units) for {c.revenue[vol]:.0%} of revenue.")
+
     @render.ui
     def rev_kpis():
-        d = df()
-        per = d[d.year.isin([2023, 2024])].groupby("year").agg(rev=("revenue", "sum"), n=("sku", "size"))
+        per = MATURE[MATURE.category.isin(cats()) & MATURE.year.isin([2023, 2024])].groupby("year").agg(rev=("revenue", "sum"), n=("sku", "size"))
         per = per.rev / per.n
-        sku = d.groupby("sku").revenue.sum().sort_values(ascending=False)
-        n80 = int((sku.cumsum() < 0.8 * sku.sum()).sum()) + 1
-        return kpis((money(d.revenue.sum()), "revenue, net of returns"), (str(len(sku)), "products"),
-                    (f"{per[2024] / per[2023] - 1:+.1%}", "revenue per product-week, 2024 vs 2023"),
-                    (f"{n80} of {len(sku)}", "products make 80% of revenue"))
+        s = sku_rev()
+        n80 = int((s.revenue.cumsum() < 0.8 * s.revenue.sum()).sum()) + 1
+        return kpis((money(s.revenue.sum()), "revenue, net of returns"), (str(len(s)), "products"),
+                    (f"{per[2024] / per[2023] - 1:+.1%}", "revenue per mature product-week, 2024 vs 2023"),
+                    (f"{n80} of {len(s)}", "products make 80% of revenue"))
 
     @render_plotly
     def share():
@@ -259,16 +305,29 @@ def server(input, output, session):
 
     @render_plotly
     def pareto():
-        sku = df().groupby("sku").revenue.sum().sort_values(ascending=False)
-        cum = (sku.cumsum() / sku.sum()).reset_index(drop=True)
+        s, n = sku_rev(), top_n()
+        cum = s.revenue.cumsum() / s.revenue.sum()
         n80 = int((cum < 0.8).sum()) + 1
+        x = cum.index + 1
         fig = go.Figure([
-            go.Scatter(x=cum.index + 1, y=cum, mode="lines", line=dict(color=PINK, width=2), hovertemplate="top %{x} products<br>%{y:.1%} of revenue<extra></extra>"),
-            go.Scatter(x=[n80], y=[cum[n80 - 1]], mode="markers", marker=dict(size=9, color=PINK, line=dict(color="white", width=2)), hoverinfo="skip"),
+            go.Scatter(x=x, y=cum, mode="lines", line=dict(color=INK3, width=2), hovertemplate="top %{x} products<br>%{y:.1%} of revenue<extra></extra>"),
+            go.Scatter(x=x[:n], y=cum[:n], mode="lines", line=dict(color=PINK, width=3), hoverinfo="skip"),  # the top N, drawn over the curve
+            go.Scatter(x=[n], y=[cum[n - 1]], mode="markers", marker=dict(size=10, color=PINK, line=dict(color="white", width=2)), hoverinfo="skip"),
         ])
         fig.add_hline(y=0.8, line=dict(dash="dot", color=INK3, width=1))
-        fig.add_annotation(x=n80, y=cum[n80 - 1], text=f"{n80} products → 80%", showarrow=False, xanchor="left", xshift=8, yshift=-12, font=dict(color=INK))
-        return style(fig, height=380, margin=dict(l=50, r=16, t=10, b=40), xaxis=dict(title="products, ranked"), yaxis=dict(tickformat=".0%", range=[0, 1.02]))
+        fig.add_annotation(x=n, y=cum[n - 1], text=f"top {n} → {cum[n - 1]:.0%} of revenue", showarrow=False, xanchor="left", xshift=10, yshift=10, font=dict(color=INK))
+        fig.add_annotation(x=n80, y=0.8, text=f"{n80} products → 80%", showarrow=False, xanchor="left", xshift=8, yshift=-12, font=dict(color=INK3, size=11))
+        return style(fig, height=350, margin=dict(l=50, r=16, t=10, b=40), xaxis=dict(title="products, ranked"), yaxis=dict(tickformat=".0%", range=[0, 1.02]))
+
+    @render.ui
+    def top_table():
+        s, total = sku_rev().head(top_n()), sku_rev().revenue.sum()
+        head = ui.tags.tr(*[ui.tags.th(h, class_=None if h in ("Product", "Category") else "num")
+                            for h in ["#", "Product", "Category", "Revenue", "Share", "Weeks on sale", "Revenue / week"]])
+        rows = [ui.tags.tr(ui.tags.td(i + 1, class_="num"), ui.tags.td(r.sku), ui.tags.td(label(r.category)), ui.tags.td(money(r.revenue), class_="num"),
+                           ui.tags.td(f"{r.revenue / total:.1%}", class_="num"), ui.tags.td(r.weeks, class_="num"), ui.tags.td(money(r.per_week), class_="num"))
+                for i, r in s.iterrows()]
+        return ui.div(ui.tags.table(head, *rows, class_="t"), class_="tablewrap", style="max-height:420px;overflow-y:auto")
 
     # Seasonality
     @render_plotly
@@ -282,15 +341,30 @@ def server(input, output, session):
         return style(fig, height=max(200, 44 * len(s) + 50), margin=dict(l=110, r=10, t=10, b=30),
                      xaxis=dict(showgrid=False), yaxis=dict(showgrid=False))
 
+    @render.ui
+    def season_take():
+        s, g = SEASON.loc[cats()], GROWTH.loc[cats()]
+        peak = s.max(axis=0).idxmax()
+        swing = s.max(axis=1).idxmax()
+        msg = (f"{MONTHS[peak - 1]} is the peak for every selected category; {label(swing)} swings hardest "
+               f"({s.loc[swing].max():.2f}× a normal month), so its stock needs to land by {MONTHS[peak - 2]}.")
+        if len(g) > 1:
+            msg += f" Mature products: {label(g.idxmax())} changed {g.max():+.1%}, {label(g.idxmin())} {g.min():+.1%}."
+        return take(msg)
+
     @render_plotly
     def weekly():
-        w = df().groupby("date").agg(units=("units_sold", "sum"), on_sale=("sku", "size"))
-        fig = make_subplots(rows=2, cols=1, shared_xaxes=True, row_heights=[0.72, 0.28], vertical_spacing=0.06)
-        fig.add_trace(go.Scatter(x=w.index, y=w.units / w.on_sale, mode="lines", line=dict(color=PINK, width=2),
-                                 hovertemplate="%{x|%d %b %Y}<br>%{y:.1f} units per product<extra></extra>"), row=1, col=1)
-        fig.add_trace(go.Bar(x=w.index, y=w.on_sale, marker=dict(color=INK3), opacity=0.45,
-                             hovertemplate="%{x|%d %b %Y}<br>%{y} products on sale<extra></extra>"), row=2, col=1)
-        return style(fig, height=380, margin=dict(l=44, r=10, t=10, b=30), hovermode="x unified")
+        m = MATURE[MATURE.category.isin(cats())]
+        iso = m.date.dt.isocalendar()  # ISO year, so 30 Dec 2024 (week 1 of 2025) doesn't land on top of Jan 2024
+        w = m.groupby([iso.year.rename("y"), iso.week.rename("wk")]).units_sold.mean().unstack("y")
+        fig = go.Figure()
+        for y, color in [(2023, TEAL), (2024, PINK)]:
+            s = w[y].dropna()
+            fig.add_trace(go.Scatter(x=s.index, y=s, mode="lines", name=str(y), line=dict(color=color, width=2),
+                                     hovertemplate=f"{y} · week %{{x}}<br>%{{y:.1f}} units per product<extra></extra>"))
+            fig.add_annotation(x=s.index[0], y=s.iloc[0], text=str(y), showarrow=False, xanchor="right", xshift=-6, font=dict(color=color, size=12))  # lines are apart in week 1, together at the peak
+        return style(fig, height=380, margin=dict(l=84, r=16, t=30, b=40), hovermode="x unified", showlegend=True,
+                     legend=dict(orientation="h", y=1.1, x=0), xaxis=dict(title="week of the year", range=[1, 53]))
 
     @render_plotly
     def growth():
@@ -304,40 +378,60 @@ def server(input, output, session):
 
     # Promotions
     @reactive.calc
+    def promo_cells() -> pd.DataFrame:
+        return PROMO_CELLS[PROMO_CELLS.index.get_level_values("category").isin(cats())]
+
+    @reactive.calc
     def promo_rows() -> pd.DataFrame:
-        cells = PROMO_CELLS[PROMO_CELLS.category.isin(cats())]
-        return cells.groupby("category").apply(promo_lift).sort_values("revenue", ascending=False)
+        return promo_cells().groupby(level="category").apply(promo_lift).sort_values("revenue")
+
+    @render.ui
+    def promo_take():
+        r = promo_rows()
+        win, lose = r[r.revenue > 0].index[::-1], r[r.revenue <= 0].index
+        parts = []
+        if len(lose):
+            parts.append("Stop promos in " + ", ".join(f"{label(c)} ({r.revenue[c]:+.1%})" for c in lose[:2]) + ".")
+        if len(win):
+            parts.append("Keep them in " + " and ".join(label(c) for c in win[:2]) + ".")
+        return take(" ".join(parts))
 
     @render.ui
     def promo_kpis():
-        cells = PROMO_CELLS[PROMO_CELLS.category.isin(cats())]
+        cells, r = promo_cells(), promo_rows()
         a = promo_lift(cells)
-        return kpis((f"{a.units_sold:+.1%}", "units in promo weeks"), (f"{a.price:.0%}", "price in promo weeks"),
-                    (f"{a.revenue:+.1%}", "revenue in promo weeks"), (f"{len(cells):,}", "product-months compared"))
+        pays = sum(verdict(v)[1] == "Pays" for v in r.revenue)
+        return kpis((f"{pays} of {len(r)}", "categories where promos clearly pay"), (f"{a.units_sold:+.1%}", "units in promo weeks"),
+                    (f"{a.price:.0%}", "price in promo weeks"), (f"{len(cells):,}", "product-months compared"))
 
     @render_plotly
     def promo():
         r = promo_rows()
         colors = {"good": GOOD, "warn": WARN, "crit": CRIT}
-        fig = go.Figure(go.Scatter(
-            x=r.units_sold, y=r.revenue, mode="markers+text", text=[label(c) for c in r.index],
-            textposition=["middle left" if u > 0.45 else "middle right" for u in r.units_sold], textfont=dict(color=INK, size=11.5),
-            marker=dict(size=12, color=[colors[verdict(v)[0]] for v in r.revenue], line=dict(color="white", width=2)),
-            hovertemplate="%{text}<br>units %{x:+.1%}<br>revenue %{y:+.1%}<extra></extra>"))
-        fig.add_vline(x=BREAK_EVEN, line=dict(dash="dot", color=INK3, width=1))
-        fig.add_hline(y=0, line=dict(color=LINE, width=1))
-        fig.add_annotation(x=BREAK_EVEN, y=1, yref="paper", text="break-even +33%", showarrow=False, xanchor="left", xshift=4, font=dict(size=11, color=INK3))
-        return style(fig, height=380, margin=dict(l=50, r=16, t=10, b=44),
-                     xaxis=dict(tickformat="+.0%", title="unit uplift", range=[0, 0.65]), yaxis=dict(tickformat="+.0%", title="revenue change"))
-
-    @render.ui
-    def promo_table():
-        rows = [ui.tags.tr(ui.tags.td(label(c)), ui.tags.td(f"{r.units_sold:+.1%}", class_="num"), ui.tags.td(f"{r.revenue:+.1%}", class_="num"),
-                           ui.tags.td(pill(*verdict(r.revenue)))) for c, r in promo_rows().iterrows()]
-        head = ui.tags.tr(ui.tags.th("Category"), ui.tags.th("Units", class_="num"), ui.tags.th("Revenue", class_="num"), ui.tags.th("Verdict"))
-        return ui.div(ui.tags.table(head, *rows, class_="t"), class_="tablewrap")
+        fig = go.Figure(go.Bar(
+            y=[label(c) for c in r.index], x=r.revenue, orientation="h",
+            marker=dict(color=[colors[verdict(v)[0]] for v in r.revenue], cornerradius=4),
+            text=[f"{verdict(v)[1]} · {v:+.1%} revenue · units {u:+.0%}" for v, u in zip(r.revenue, r.units_sold)],
+            textposition="outside", cliponaxis=False, textfont=dict(color=INK2),
+            hovertemplate="%{y}<br>revenue %{x:+.1%}<extra></extra>"))
+        pad = max(abs(r.revenue.min()), abs(r.revenue.max())) * 1.3  # labels are long; leave room on both sides
+        return style(fig, height=max(220, 40 * len(r) + 60), margin=dict(l=110, r=16, t=10, b=30),
+                     xaxis=dict(tickformat="+.0%", zeroline=True, zerolinecolor=INK3, range=[min(r.revenue.min(), 0) - pad, max(r.revenue.max(), 0) + pad]))
 
     # Stockouts
+    @reactive.calc
+    def live() -> pd.DataFrame:
+        return LIVE[LIVE.category.isin(cats())].sort_values("per_stockout_week", ascending=False, ignore_index=True)
+
+    @render.ui
+    def so_take():
+        top = live().head(10)
+        if top.empty:
+            return None
+        lead = top.category.value_counts()
+        return take(f"Protect {label(lead.index[0])} first: {lead.iloc[0]} of the 10 costliest products to run out of are {label(lead.index[0])}. "
+                    f"One stockout week of {top.sku[0]} costs about {money(top.per_stockout_week[0])}.")
+
     @render.ui
     def so_kpis():
         d = df()
@@ -354,17 +448,25 @@ def server(input, output, session):
         return style(fig, margin=dict(l=110, r=56, t=10, b=30), xaxis=dict(tickprefix="$", tickformat="~s"))
 
     @render_plotly
-    def so_month():
-        m = df().groupby("month").stockout.mean()
-        fig = go.Figure(go.Bar(x=[MONTHS[i - 1] for i in m.index], y=m, marker=dict(color=PINK, cornerradius=4), hovertemplate="%{x}: %{y:.1%}<extra></extra>"))
-        return style(fig, margin=dict(l=44, r=10, t=10, b=30), yaxis=dict(tickformat=".0%", range=[0, 0.08]))
+    def so_cost():
+        v = live()
+        order = v.groupby("category").per_stockout_week.median().sort_values().index
+        fig = go.Figure(go.Box(
+            y=v.category.map(label), x=v.per_stockout_week, orientation="h", boxpoints="all", jitter=0.5, pointpos=0,
+            fillcolor="rgba(0,0,0,0)", line=dict(color="rgba(0,0,0,0)"), marker=dict(color=PINK, size=7, opacity=0.75, line=dict(color="white", width=1)),
+            text=v.sku, hovertemplate="%{text}<br>%{x:$,.0f} per stockout week<extra></extra>"))
+        return style(fig, margin=dict(l=110, r=16, t=10, b=40), yaxis=dict(categoryorder="array", categoryarray=[label(c) for c in order]),
+                     xaxis=dict(tickprefix="$", tickformat="~s", title="revenue lost in one stockout week"))
 
     @render.ui
     def so_table():
-        top = df().groupby(["sku", "category", "region"]).agg(weeks=("stockout", "sum"), lost=("lost_revenue", "sum")).nlargest(10, "lost")
-        head = ui.tags.tr(*[ui.tags.th(h, class_="num" if i > 2 else None) for i, h in enumerate(["Product", "Category", "Home region", "Stockout weeks", "Revenue lost"])])
-        rows = [ui.tags.tr(ui.tags.td(s), ui.tags.td(label(c)), ui.tags.td(r), ui.tags.td(int(v.weeks), class_="num"), ui.tags.td(money(v.lost), class_="num"))
-                for (s, c, r), v in top.iterrows()]
+        top = live().head(10)
+        head = ui.tags.tr(*[ui.tags.th(h, class_=None if h in ("Product", "Category", "Home region") else "num")
+                            for h in ["#", "Product", "Category", "Home region", "Typical units / week", "Price", "Lost per stockout week", "Expected per year"]])
+        rows = [ui.tags.tr(ui.tags.td(i + 1, class_="num"), ui.tags.td(r.sku), ui.tags.td(label(r.category)), ui.tags.td(r.region),
+                           ui.tags.td(f"{r.weekly_units:.0f}", class_="num"), ui.tags.td(f"${r.price:,.0f}", class_="num"),
+                           ui.tags.td(money(r.per_stockout_week), class_="num"), ui.tags.td(money(r.per_year), class_="num"))
+                for i, r in top.iterrows()]
         return ui.div(ui.tags.table(head, *rows, class_="t"), class_="tablewrap")
 
     # Product health
@@ -380,7 +482,16 @@ def server(input, output, session):
         w = week_rows()
         f = w[w.flag != "keep"].sort_values("ratio")
         return pd.DataFrame({"Product": f.sku, "Category": f.category.map(label), "Home region": f.region,
-                             "Ratio": f.ratio.round(2), "Flag": f.flag.astype(str), "Actually dying": f.is_declining.map({1: "yes", 0: "no"})})
+                             "Ratio": f.ratio.round(2), "Flag": f.flag.astype(str)})
+
+    @render.ui
+    def health_take():
+        n = week_rows().flag.value_counts()
+        drop = flagged()[lambda f: f.Flag == "drop"].Product.tolist()
+        if not drop:
+            return take(f"No drop candidates as of {input.week():%d %b %Y}. {n.get('watch', 0)} products on watch.")
+        return take(f"{len(drop)} drop candidate{'s' if len(drop) > 1 else ''} as of {input.week():%d %b %Y}: {', '.join(drop[:5])}"
+                    f"{' …' if len(drop) > 5 else ''}. Start clearing stock; {n.get('watch', 0)} more on watch.")
 
     @render.ui
     def tiers():
