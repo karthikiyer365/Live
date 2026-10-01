@@ -1,0 +1,17 @@
+column,type,description
+date,date,Week (Monday)
+sku,string,Product SKU code
+category,string,electronics / apparel / home_kitchen / beauty / toys_games / sports_outdoor / grocery / books_media
+region,string,North / South / East / West / Central
+units_sold,int,OBSERVED units sold (capped/zeroed during stockouts)
+true_demand,int,GROUND TRUTH latent demand (equals units_sold except during stockouts) — for lost-sales imputation studies
+price,float,Unit price this week (reflects ~25% promo discount when on_promo=1)
+on_promo,int,1 if the SKU was on promotion this week (flag to separate baseline vs uplift)
+stockout,int,1 if a supply interruption capped sales below true demand
+returns,int,Units returned (category-dependent return rate)
+seasonal_index,float,Seasonal multiplier applied this week (1.0 = average; >1 peak season)
+is_new_launch,int,1 during the SKU cold-start ramp (first ~8 weeks) — new-SKU forecasting challenge
+is_declining,int,1 during the SKU end-of-life decline
+month,int,Month (1-12)
+net_units,int,units_sold minus returns
+revenue,float,net_units * price (USD)

@@ -3,6 +3,8 @@
 #   /india/    India EcoPolitical dashboard, exported to WebAssembly
 #   /tickets/  topic-classification notebook, rendered to HTML (no code)
 #   /sales/    e-commerce sales dashboard (Shiny for Python), exported to WebAssembly
+#   /forecast/      demand-forecasting notebook, rendered to HTML (no code)
+#   /forecast-app/  promo planner (Shiny for Python), exported to WebAssembly
 #
 # Why an Action rather than committing the build: the shinylive export is ~119MB
 # of generated webR runtime and package binaries. That belongs in a Pages
@@ -23,6 +25,9 @@ on:
       - 'topic-classification/*.ipynb'
       - 'ecommerce-sales-dashboard/app.py'
       - 'ecommerce-sales-dashboard/data/**'
+      - 'ecommerce-demand-forecasting/*.ipynb'
+      - 'ecommerce-demand-forecasting/app.py'
+      - 'ecommerce-demand-forecasting/data/**'
       - 'site/**'
       - '.github/workflows/deploy-dashboard.yml'
 
@@ -83,6 +88,14 @@ jobs:
             --output-dir _site/tickets --output index
           sed -i 's#</head>#<link rel="stylesheet" href="../notebook.css"></head>#' _site/tickets/index.html
 
+      # Rendered from committed outputs like the tickets notebook; the notebook also writes data/forecasts.csv for the planner.
+      - name: Render demand-forecasting notebook
+        run: |
+          jupyter nbconvert --to html --no-input \
+            ecommerce-demand-forecasting/demand_forecasting.ipynb \
+            --output-dir _site/forecast --output index
+          sed -i 's#</head>#<link rel="stylesheet" href="../notebook.css"></head>#' _site/forecast/index.html
+
       # Only the app and its CSV are staged: the notebook, venv and data dictionary stay out of the bundle.
       - name: Export sales dashboard to WebAssembly
         run: |
@@ -91,6 +104,13 @@ jobs:
           cp ecommerce-sales-dashboard/app.py stage-sales/
           cp ecommerce-sales-dashboard/data/ecommerce_demand_weekly.csv stage-sales/data/
           shinylive export stage-sales _site/sales
+
+      - name: Export promo planner to WebAssembly
+        run: |
+          mkdir -p stage-forecast/data
+          cp ecommerce-demand-forecasting/app.py stage-forecast/
+          cp ecommerce-demand-forecasting/data/forecasts.csv ecommerce-demand-forecasting/data/ecommerce_demand_weekly.csv stage-forecast/data/
+          shinylive export stage-forecast _site/forecast-app
 
       - name: Add site shell (landing page, header, notebook fonts, images)
         run: cp -r site/. _site/
