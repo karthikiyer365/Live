@@ -22,8 +22,10 @@ the [promo planner](https://projects.karthikiyer.info/#forecast-app).
 > rows tested. *(Step 12)*
 
 > **4 · Models compared on equal terms.** HistGradientBoosting (Poisson for the forecast, quantile 0.9 for p90), one pair per horizon, trained
-> three ways (raw / stockouts filled / perfect history) and scored against three simple rules (last 4 weeks, level × season, same week last
-> year) with **WAPE** (share of units missed) and **bias** (over/under), against true demand, on the same rolling folds. *(Steps 13–16, 19)*
+> three ways (raw / stockouts filled / perfect history) and scored against three simple rules and two ETS models (last 4 weeks, level × season, same week last
+> year; ETS with a 52-week season, and ETS on seasonally adjusted demand) with **WAPE** (share of units missed) and **bias** (over/under),
+> against true demand, on the same rolling folds. Every product had under 2 years of history, so per-product seasonal ETS can't learn the
+> season; the global model learns it across products. *(Steps 13–16, 19)*
 
 > **5 · Dying products are over-forecast by +38% (4 weeks) and +73% (3 months).** Nothing in their history warns of the decline, and the small
 > overall bias hides it because healthy products run under (−5%). In a warehouse that means dead stock, so the planner warns when sales are
@@ -39,8 +41,9 @@ the [promo planner](https://projects.karthikiyer.info/#forecast-app).
 | | 4 weeks | 3 months |
 |---|---|---|
 | Model error, weekly (WAPE) | **15.6%** | **19.7%** |
-| Best simple rule | 21.6% (last 4 weeks) | 23.8% (level × season) |
-| Error cut | −28% | −17% |
+| Best baseline, ETS included | 20.5% (ETS, seasonally adjusted) | 23.8% (level × season) |
+| Textbook ETS (52-week season) | 22.0% | 33.7% |
+| Error cut vs best baseline | −24% | −17% |
 | Error on the horizon total | 11.7% | 14.2% |
 | Error weighted by revenue | 16.7% | 20.6% |
 | Error in Nov–Dec weeks | 14.4% | 24.3% |

@@ -9,5 +9,6 @@ seaborn==0.13.2
 shiny==1.8.0
 shinylive==0.8.12
 shinywidgets==0.8.1
+statsforecast==2.1.1
 ipykernel
 nbclient
