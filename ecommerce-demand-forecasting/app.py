@@ -18,12 +18,18 @@ HISTORY_WEEKS = 26
 FC = pd.read_csv(HERE / "data" / "forecasts.csv", parse_dates=["week"])
 _hist = pd.read_csv(HERE / "data" / "ecommerce_demand_weekly.csv", parse_dates=["date"], usecols=["sku", "date", "true_demand"])
 HIST = _hist[_hist.date > _hist.date.max() - pd.Timedelta(weeks=HISTORY_WEEKS)]
+LAST_YEAR = _hist[_hist.date.isin(FC.week.drop_duplicates() - pd.Timedelta(weeks=52))]  # same weeks one year earlier, for context
 PRODUCTS = FC.drop_duplicates("sku").sort_values(["category", "sku"])
 CATS = sorted(PRODUCTS.category.unique())
 HORIZONS = {"4 weeks": 4, "3 months": 13}
 # p90 of a horizon total = forecast total × factor learned from backtest errors (notebook Step 22). Adding weekly p90s over-covers.
 P90_FACTOR = pd.read_csv(HERE / "data" / "p90_factors.csv").set_index(["horizon", "level"]).factor
 SLOWING = 0.8      # last 4 ÷ last 12 weeks, seasonality removed; same idea as the sales dashboard's product-health rule
+
+
+def dates(idx) -> list:
+    """Plain datetimes for plotly; under pandas 2.x the widget layer otherwise sends datetime64 as raw nanoseconds."""
+    return list(pd.DatetimeIndex(idx).to_pydatetime())
 
 
 def label(cat: str) -> str:
@@ -97,6 +103,7 @@ app_ui = ui.page_fluid(
             ui.output_ui("horizon_hint"),
             ui.h3("Promotion"),
             ui.input_switch("promo", f"Run a {DISCOUNT:.0%}-off promo", False),
+            ui.output_ui("promo_hint"),
             ui.panel_conditional("input.promo",
                                  ui.output_ui("start_ui"),
                                  ui.input_slider("weeks", "Length (weeks)", min=1, max=4, value=1, step=1),
@@ -106,10 +113,10 @@ app_ui = ui.page_fluid(
             ui.output_ui("take"),
             ui.output_ui("warnings"),
             ui.output_ui("kpis"),
-            ui.div(ui.h4("Weekly demand"), ui.p("Last 26 weeks, then the forecast. The band runs up to each week's p90; shaded weeks are on promo.", class_="sub"),
+            ui.div(ui.h4("Weekly demand"), ui.p("Last 26 weeks, then the forecast. The band runs up to each week's p90; shaded weeks are on promo; dotted gray = the same weeks last year.", class_="sub"),
                    output_widget("chart"), class_="panel"),
             ui.div(ui.h4("Week by week"), ui.output_ui("table"), class_="panel"),
-            ui.p("Demand to plan for = the p90 of the whole horizon's demand: about 9 times in 10 the total comes in at or below it (89% and 88% in "
+            ui.p("Demand to plan for = the p90 of the whole horizon's demand: about 9 times in 10 the total comes in at or below it (about 90% in "
                  "backtests for one product; rougher for a category). It is a demand figure, not an order quantity: there is no on-hand stock or lead "
                  "time in this data. Weekly p90s in the table are for week-level checks and should not be added up. Revenue is net of the category's "
                  "return rate, at regular price outside promo weeks and 25% off inside them.", class_="note"),
@@ -162,9 +169,15 @@ def server(input, output, session):
 
     @render.ui
     def horizon_hint():
-        if input.horizon() == "3 months":
-            return ui.p("In backtests the 3-month model was least accurate when its window covered Nov–Dec (24% error vs 19% in other weeks).", class_="hint")
-        return ui.p("Separate models: the 3-month one is less sure the further out it goes.", class_="hint")
+        return ui.p("Separate models for each horizon. In backtests the 4-week model missed 15% of units and the 3-month one 19%. "
+                    "January to March is the flattest stretch of the year, so a flat line here is expected; compare it with last year's dotted line.", class_="hint")
+
+    @render.ui
+    def promo_hint():
+        f = FC[(FC.horizon == input.horizon()) & FC.sku.isin(skus())].pivot_table(index=["sku", "week"], columns="promo", values="forecast")
+        lift = f[1].sum() / f[0].sum() - 1
+        return ui.p(f"A promo week lifts {who()} about {lift:+.0%}. The lift learned from history is a steady share of each product's "
+                    "sales, so it adds more units in busier weeks.", class_="hint")
 
     @render.ui
     def warnings():
@@ -173,7 +186,7 @@ def server(input, output, session):
         slow = trend[trend < SLOWING]
         if input.scope() == "product" and len(slow):
             out.append(f"Sales are slowing: the last 4 weeks ran at {slow.iloc[0]:.0%} of the 12 before (seasonality removed). If {input.sku()} is "
-                       "entering its decline, this forecast is likely too high; in backtests declining products were over-forecast by 38–73%.")
+                       "entering its decline, this forecast is likely too high; in backtests declining products were over-forecast by 42–72%.")
         elif input.scope() == "category" and len(slow):
             n = len(slow)
             out.append(f"{n} of these products {'shows' if n == 1 else 'show'} slowing sales ({', '.join(slow.index[:5])}); "
@@ -210,14 +223,21 @@ def server(input, output, session):
         fig = go.Figure()
         for wk in p.index[p.promo]:
             fig.add_vrect(x0=wk - pd.Timedelta(days=3.5), x1=wk + pd.Timedelta(days=3.5), fillcolor=PINK, opacity=0.08, line_width=0)
-        fig.add_trace(go.Scatter(x=h.index, y=h.values, mode="lines", name="demand (history)", line=dict(color=INK3, width=2),
+        fig.add_trace(go.Scatter(x=dates(h.index), y=h.values, mode="lines", name="demand (history)", line=dict(color=INK3, width=2),
                                  hovertemplate="%{x|%d %b %Y}<br>%{y:,.0f} units<extra></extra>"))
-        fig.add_trace(go.Scatter(x=p.index, y=p.p90, mode="lines", line=dict(width=0), showlegend=False, hoverinfo="skip"))
-        fig.add_trace(go.Scatter(x=p.index, y=p.forecast, mode="lines+markers", name="forecast", line=dict(color=PINK, width=2.5),
+        ly = LAST_YEAR[LAST_YEAR.sku.isin(skus())].groupby("date").agg(units=("true_demand", "sum"), products=("sku", "size"))
+        if len(ly):
+            # a category had different products a year ago, so scale its total to today's product count
+            y = ly.units if input.scope() == "product" else ly.units / ly.products * len(skus())
+            fig.add_trace(go.Scatter(x=dates(ly.index + pd.Timedelta(weeks=52)), y=y, mode="lines", name="same weeks last year",
+                                     line=dict(color=INK3, width=1.5, dash="dot"),
+                                     hovertemplate="%{x|%d %b} last year<br>%{y:,.0f} units<extra></extra>"))
+        fig.add_trace(go.Scatter(x=dates(p.index), y=p.p90, mode="lines", line=dict(width=0), showlegend=False, hoverinfo="skip"))
+        fig.add_trace(go.Scatter(x=dates(p.index), y=p.forecast, mode="lines+markers", name="forecast", line=dict(color=PINK, width=2.5),
                                  fill="tonexty", fillcolor="rgba(221,0,119,0.12)", marker=dict(size=6),
                                  customdata=p.p90, hovertemplate="%{x|%d %b %Y}<br>forecast %{y:,.0f} · p90 %{customdata:,.0f}<extra></extra>"))
         if p.promo.any():
-            fig.add_trace(go.Scatter(x=p.index, y=p.no_promo, mode="lines", name="without the promo", line=dict(color=TEAL, width=1.5, dash="dot"),
+            fig.add_trace(go.Scatter(x=dates(p.index), y=p.no_promo, mode="lines", name="without the promo", line=dict(color=TEAL, width=1.5, dash="dot"),
                                      hovertemplate="%{x|%d %b %Y}<br>%{y:,.0f} units without the promo<extra></extra>"))
         fig.update_layout(template="none", height=360, paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
                           font=dict(family=FONT, color=INK2, size=12), margin=dict(l=50, r=16, t=30, b=36), hovermode="x unified",
