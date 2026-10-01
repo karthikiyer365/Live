@@ -1,0 +1,13 @@
+Jinja2==3.1.6
+matplotlib==3.11.2
+nbconvert==7.17.1
+numpy==2.4.6
+pandas==3.0.6
+plotly==7.1.0
+scikit-learn==1.9.1
+seaborn==0.13.2
+shiny==1.8.0
+shinylive==0.8.12
+shinywidgets==0.8.1
+ipykernel
+nbclient
