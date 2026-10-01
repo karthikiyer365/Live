@@ -109,7 +109,7 @@ jobs:
         run: |
           mkdir -p stage-forecast/data
           cp ecommerce-demand-forecasting/app.py stage-forecast/
-          cp ecommerce-demand-forecasting/data/forecasts.csv ecommerce-demand-forecasting/data/ecommerce_demand_weekly.csv stage-forecast/data/
+          cp ecommerce-demand-forecasting/data/{forecasts,p90_factors,ecommerce_demand_weekly}.csv stage-forecast/data/
           shinylive export stage-forecast _site/forecast-app
 
       - name: Add site shell (landing page, header, notebook fonts, images)

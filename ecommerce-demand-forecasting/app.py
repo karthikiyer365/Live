@@ -21,6 +21,9 @@ HIST = _hist[_hist.date > _hist.date.max() - pd.Timedelta(weeks=HISTORY_WEEKS)]
 PRODUCTS = FC.drop_duplicates("sku").sort_values(["category", "sku"])
 CATS = sorted(PRODUCTS.category.unique())
 HORIZONS = {"4 weeks": 4, "3 months": 13}
+# p90 of a horizon total = forecast total × factor learned from backtest errors (notebook Step 22). Adding weekly p90s over-covers.
+P90_FACTOR = pd.read_csv(HERE / "data" / "p90_factors.csv").set_index(["horizon", "level"]).factor
+SLOWING = 0.8      # last 4 ÷ last 12 weeks, seasonality removed; same idea as the sales dashboard's product-health rule
 
 
 def label(cat: str) -> str:
@@ -59,6 +62,7 @@ h1 {{ font-size: 26px; font-weight: 600; letter-spacing: -.02em; margin: 4px 0 0
 .panel {{ border: 1px solid {LINE}; border-radius: 8px; padding: 14px 14px 6px; min-width: 0; }}
 .panel h4 {{ margin: 0 0 2px; font-size: 14px; font-weight: 600; }}
 .panel .sub {{ margin: 0 0 4px; font-size: 12.5px; color: {INK3}; }}
+.warn {{ margin: 0; font-size: 13px; color: #8a5a00; background: #fff7e0; border-radius: 6px; padding: 8px 12px; }}
 .note {{ font-size: 12.5px; color: {INK2}; border-left: 2px solid {LINE}; padding-left: 10px; margin: 0; line-height: 1.5; }}
 table.t {{ width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }}
 table.t th {{ text-align: right; font: 500 10px "Geist Mono", ui-monospace, monospace; letter-spacing: .1em; text-transform: uppercase; color: {INK3}; padding: 8px 10px; border-bottom: 1px solid {LINE}; }}
@@ -90,7 +94,7 @@ app_ui = ui.page_fluid(
             ui.panel_conditional("input.scope === 'category'", ui.input_select("cat", "Category", {c: label(c) for c in CATS})),
             ui.h3("How far ahead"),
             ui.input_radio_buttons("horizon", None, list(HORIZONS), selected="4 weeks", inline=True),
-            ui.p("Separate models: the 3-month one is less sure the further out it goes.", class_="hint"),
+            ui.output_ui("horizon_hint"),
             ui.h3("Promotion"),
             ui.input_switch("promo", f"Run a {DISCOUNT:.0%}-off promo", False),
             ui.panel_conditional("input.promo",
@@ -100,12 +104,15 @@ app_ui = ui.page_fluid(
             class_="controls"),
         ui.div(
             ui.output_ui("take"),
+            ui.output_ui("warnings"),
             ui.output_ui("kpis"),
-            ui.div(ui.h4("Weekly demand"), ui.p("Last 26 weeks, then the forecast. The band runs up to p90; shaded weeks are on promo.", class_="sub"),
+            ui.div(ui.h4("Weekly demand"), ui.p("Last 26 weeks, then the forecast. The band runs up to each week's p90; shaded weeks are on promo.", class_="sub"),
                    output_widget("chart"), class_="panel"),
             ui.div(ui.h4("Week by week"), ui.output_ui("table"), class_="panel"),
-            ui.p("p90 is the level to stock to cover about 9 weeks in 10 (in backtests it covered 87–88%). For a category it is the sum of each "
-                 "product's p90, which is on the safe side. Revenue is at regular price outside promo weeks and 25% off inside them.", class_="note"),
+            ui.p("Demand to plan for = the p90 of the whole horizon's demand: about 9 times in 10 the total comes in at or below it (89% and 88% in "
+                 "backtests for one product; rougher for a category). It is a demand figure, not an order quantity: there is no on-hand stock or lead "
+                 "time in this data. Weekly p90s in the table are for week-level checks and should not be added up. Revenue is net of the category's "
+                 "return rate, at regular price outside promo weeks and 25% off inside them.", class_="note"),
             class_="results"),
         class_="layout"),
 )
@@ -142,11 +149,39 @@ def server(input, output, session):
         on = f.week.isin(promo_weeks())
         chosen = f[((f.promo == 1) & on) | ((f.promo == 0) & ~on)]  # promo-on rows for promo weeks, promo-off rows otherwise
         base = f[f.promo == 0]
-        price = chosen.price * chosen.promo.map({0: 1.0, 1: 1 - DISCOUNT})
+        price = chosen.price * chosen.promo.map({0: 1.0, 1: 1 - DISCOUNT}) * (1 - chosen.return_rate)  # net of returns, like the dashboard
         weekly = chosen.assign(revenue=chosen.forecast * price).groupby("week").agg(forecast=("forecast", "sum"), p90=("p90", "sum"), revenue=("revenue", "sum"))
         weekly["no_promo"] = base.groupby("week").forecast.sum()
         weekly["promo"] = weekly.index.isin(promo_weeks())
         return weekly
+
+    @reactive.calc
+    def total_p90() -> float:
+        level = "product" if input.scope() == "product" else "category"
+        return plan().forecast.sum() * P90_FACTOR[(input.horizon(), level)]
+
+    @render.ui
+    def horizon_hint():
+        if input.horizon() == "3 months":
+            return ui.p("In backtests the 3-month model was least accurate when its window covered Nov–Dec (24% error vs 19% in other weeks).", class_="hint")
+        return ui.p("Separate models: the 3-month one is less sure the further out it goes.", class_="hint")
+
+    @render.ui
+    def warnings():
+        out = []
+        trend = PRODUCTS.set_index("sku").trend.reindex(skus())
+        slow = trend[trend < SLOWING]
+        if input.scope() == "product" and len(slow):
+            out.append(f"Sales are slowing: the last 4 weeks ran at {slow.iloc[0]:.0%} of the 12 before (seasonality removed). If {input.sku()} is "
+                       "entering its decline, this forecast is likely too high; in backtests declining products were over-forecast by 38–73%.")
+        elif input.scope() == "category" and len(slow):
+            n = len(slow)
+            out.append(f"{n} of these products {'shows' if n == 1 else 'show'} slowing sales ({', '.join(slow.index[:5])}); "
+                       f"{'its forecast' if n == 1 else 'their forecasts'} may run high.")
+        if input.scope() == "category" and input.promo():
+            out.append("A whole category on promo at once never happened in the history. This result adds each product's lift as if promoted alone, "
+                       "ignoring sales moving between products, so read it as an upper bound.")
+        return ui.div(*[ui.p(m, class_="warn") for m in out], style="display:grid;gap:8px") if out else None
 
     def who() -> str:
         return input.sku() if input.scope() == "product" else f"all {len(skus())} {label(input.cat())} products"
@@ -154,7 +189,7 @@ def server(input, output, session):
     @render.ui
     def take():
         p = plan()
-        msg = f"{who()}: about {units(p.forecast.sum())} units over the next {input.horizon()}. Stock up to {units(p.p90.sum())} to cover most weeks."
+        msg = f"{who()}: about {units(p.forecast.sum())} units over the next {input.horizon()}. Plan for up to {units(total_p90())} (p90)."
         if p.promo.any():
             gain = p.forecast.sum() / p.no_promo.sum() - 1
             msg += f" The {p.promo.sum()}-week promo adds {units(p.forecast.sum() - p.no_promo.sum())} units ({gain:+.0%})."
@@ -163,8 +198,8 @@ def server(input, output, session):
     @render.ui
     def kpis():
         p = plan()
-        items = [(units(p.forecast.sum()), f"units forecast, next {input.horizon()}"), (units(p.p90.sum()), "p90: stock to cover most weeks"),
-                 (f"${p.revenue.sum():,.0f}", "forecast revenue"),
+        items = [(units(p.forecast.sum()), f"units forecast, next {input.horizon()}"), (units(total_p90()), "demand to plan for (p90 of the total)"),
+                 (f"${p.revenue.sum():,.0f}", "forecast revenue, net of returns"),
                  (f"{p.forecast.sum() / p.no_promo.sum() - 1:+.0%}" if p.promo.any() else "—", "change from the promo")]
         return ui.div(*[ui.div(ui.tags.b(v), ui.span(s), class_="kpi") for v, s in items], class_="kpis")
 
@@ -194,7 +229,7 @@ def server(input, output, session):
     @render.ui
     def table():
         p = plan()
-        head = ui.tags.tr(*[ui.tags.th(h) for h in ["Week of", "Promo", "Forecast", "p90", "Without promo", "Revenue"]])
+        head = ui.tags.tr(*[ui.tags.th(h) for h in ["Week of", "Promo", "Forecast", "Weekly p90", "Without promo", "Revenue (net)"]])
         rows = [ui.tags.tr(ui.tags.td(f"{w:%d %b %Y}"), ui.tags.td("25% off" if r.promo else "—"), ui.tags.td(units(r.forecast)),
                            ui.tags.td(units(r.p90)), ui.tags.td(units(r.no_promo)), ui.tags.td(f"${r.revenue:,.0f}"),
                            class_="promo" if r.promo else None) for w, r in p.iterrows()]

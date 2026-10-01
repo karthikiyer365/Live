@@ -18,3 +18,11 @@ body { background: #fff; color: #1a1a1a; }
 /* pandas right-aligns every cell; most tables here hold text, which reads ragged. */
 .jp-RenderedHTMLCommon table.dataframe td,
 .jp-RenderedHTMLCommon table.dataframe th { text-align: left; }
+
+/* "Key idea" callouts are markdown blockquotes; give them the site's pink accent so they read as highlights. */
+.jp-RenderedHTMLCommon blockquote {
+  margin: 14px 0; padding: 12px 16px; border-left: 3px solid #d07; background: #fdf2f8;
+  border-radius: 0 6px 6px 0; color: #1a1a1a;
+}
+.jp-RenderedHTMLCommon blockquote strong:first-child { color: #d07; }
+.jp-RenderedHTMLCommon blockquote p:last-child { margin-bottom: 0; }
