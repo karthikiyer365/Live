@@ -19,7 +19,7 @@ Live ones are published at **[projects.karthikiyer.info](https://projects.karthi
 - **Questions:** What will each product sell? How much to stock to cover most weeks (p90)? What does a planned promo add?
 - **Stack:** Kaggle CSV → pandas → scikit-learn HistGradientBoosting (Poisson + quantile), rolling backtests → notebook rendered to HTML + Shiny for Python planner via shinylive → GitHub Pages
 - **S/T:** Sales history is capped in stockout weeks (only 14% of demand recorded), so a model trained on it under-forecasts; a PM needs forecasts that react to promos they plan.
-- **A/R:** Filled stockout weeks from in-stock history (bias −6.3% → −2.1%) and built separate 4-week and 3-month models on leak-free as-of features. Error is 24% and 17% below the best baseline, ETS included; a p90 of the horizon total (not summed weekly p90s) covers ~88–90% of totals out of fold.
+- **A/R:** Filled stockout weeks from in-stock history (bias −4.9% → −1.3%) and built separate 4-week and 3-month models on leak-free as-of features. Error is 26% and 21% below the best baseline, ETS included; a p90 of the horizon total (not summed weekly p90s) covers ~90% of totals out of fold.
 
 ### Stockout Risk Ranking
 - **Objective:** Rank products by revenue at risk next month if they run out of stock.

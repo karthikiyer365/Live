@@ -27,35 +27,39 @@ the [promo planner](https://projects.karthikiyer.info/#forecast-app).
 > against true demand, on the same rolling folds. Every product had under 2 years of history, so per-product seasonal ETS can't learn the
 > season; the global model learns it across products. *(Steps 13–16, 19)*
 
-> **5 · Dying products are over-forecast by +38% (4 weeks) and +73% (3 months).** Nothing in their history warns of the decline, and the small
-> overall bias hides it because healthy products run under (−5%). In a warehouse that means dead stock, so the planner warns when sales are
+> **5 · Dying products are over-forecast by +42% (4 weeks) and +72% (3 months).** Nothing in their history warns of the decline, and the small
+> overall bias hides it because healthy products run under (−4% / −7%). In a warehouse that means dead stock, so the planner warns when sales are
 > already slowing. *(Steps 17, 20)*
 
-> **6 · Plan to the p90 of the total.** Adding weekly p90s covers 94–97% of horizon totals instead of 90%. *(Step 22)*
+> **6 · The season is multiplied in, not learned from scratch.** The model predicts demand ÷ (recent level × season factor) and
+> multiplies the season back in. Predicting demand directly squashed the November peak: from a 30 Sep forecast it rose 1.22× vs 1.49× actual;
+> the relative target reaches 1.40×. *(Steps 14, 19)*
 
-> **7 · Promo forecasts are precomputed, and that is exact.** A promo's lift doesn't carry into the next week, so forecasting each week with the
+> **7 · Plan to the p90 of the total.** Adding weekly p90s covers 96–97% of horizon totals instead of 90%. *(Step 22)*
+
+> **8 · Promo forecasts are precomputed, and that is exact.** A promo's lift doesn't carry into the next week, so forecasting each week with the
 > promo off and on covers every plan a PM can enter. *(Step 23)*
 
 ## Results (rolling backtests, scored against true demand)
 
 | | 4 weeks | 3 months |
 |---|---|---|
-| Model error, weekly (WAPE) | **15.6%** | **19.7%** |
+| Model error, weekly (WAPE) | **15.2%** | **18.9%** |
 | Best baseline, ETS included | 20.5% (ETS, seasonally adjusted) | 23.8% (level × season) |
 | Textbook ETS (52-week season) | 22.0% | 33.7% |
-| Error cut vs best baseline | −24% | −17% |
-| Error on the horizon total | 11.7% | 14.2% |
-| Error weighted by revenue | 16.7% | 20.6% |
-| Error in Nov–Dec weeks | 14.4% | 24.3% |
-| Bias: launch / mature · final decline | −4.6% · +38% | −6.5% · +73% |
-| Weekly p90 covers | 87% of weeks | 88% of weeks |
-| p90 of the total covers (one product, out of fold) | 89.5% | 87.8% |
+| Error cut vs best baseline | −26% | −21% |
+| Error on the horizon total | 11.3% | 13.2% |
+| Error weighted by revenue | 16.2% | 19.5% |
+| Error in Nov–Dec weeks | 13.4% | 20.3% |
+| Bias: launch / mature · final decline | −3.9% · +42% | −7.2% · +72% |
+| Weekly p90 covers | 87.5% of weeks | 86.6% of weeks |
+| p90 of the total covers (one product, out of fold) | 89.6% | 90.4% |
 
 | Training target (4-week model) | WAPE | Bias |
 |---|---|---|
-| A · raw units sold | 18.7% | −6.3% |
-| **B · stockout weeks filled** (used) | **15.6%** | **−2.1%** |
-| C · true demand (best case, not available in real life) | 15.3% | −2.0% |
+| A · raw units sold | 17.6% | −4.9% |
+| **B · stockout weeks filled** (used) | **15.2%** | **−1.3%** |
+| C · true demand (best case, not available in real life) | 14.9% | −1.2% |
 
 ## How it works
 
@@ -63,7 +67,7 @@ the [promo planner](https://projects.karthikiyer.info/#forecast-app).
 data/ecommerce_demand_weekly.csv
   → fill stockout weeks (average of the last 2 in-stock weeks, history only)
   → features as of each forecast date (recent levels, season, trend, weeks since launch, planned promo)
-  → HistGradientBoosting: forecast (Poisson) + p90 (quantile), one pair per horizon
+  → HistGradientBoosting on demand ÷ seasonal forecast: forecast (Poisson) + p90 (quantile), one pair per horizon
   → rolling backtests: 6 × 4-week folds, 4 × 3-month folds, all covering the Nov peak
   → horizon-total p90 = forecast total × factor from backtest errors (product / category) → data/p90_factors.csv
   → final models forecast every live product from 30 Dec 2024, promo off and on → data/forecasts.csv
@@ -76,7 +80,7 @@ without running the model in the browser.
 ## Limits
 
 - Synthetic data: the method is shown to work; revalidate on real sales.
-- Products entering their final decline are over-forecast (+38% at 4 weeks, +73% at 3 months); the planner flags products whose sales are already slowing.
+- Products entering their final decline are over-forecast (+42% at 4 weeks, +72% at 3 months); the planner flags products whose sales are already slowing.
 - The 3-month model is weakest in Nov–Dec, the season a Q4 pre-buy is planned for.
 - Promo = 25% off only, the one discount depth in the data. Category-wide promos never happened in the history, so that planner result ignores cannibalization (upper bound).
 - "Demand to plan for" is a demand figure, not an order quantity: no on-hand stock, lead times or order minimums in the data.
