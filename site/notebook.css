@@ -26,3 +26,6 @@ body { background: #fff; color: #1a1a1a; }
 }
 .jp-RenderedHTMLCommon blockquote strong:first-child { color: #d07; }
 .jp-RenderedHTMLCommon blockquote p:last-child { margin-bottom: 0; }
+/* Links from a notebook page to another page of the site (target="_top" so they leave the frame); site pink like the card links. */
+.jp-RenderedHTMLCommon a[target="_top"] { color: #d07; text-decoration: none; }
+.jp-RenderedHTMLCommon a[target="_top"]:hover { text-decoration: underline; }
