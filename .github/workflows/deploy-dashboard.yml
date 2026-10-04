@@ -115,6 +115,16 @@ jobs:
       - name: Add site shell (landing page, header, notebook fonts, images)
         run: cp -r site/. _site/
 
+      # One snippet for all six pages: the landing page plus the five generated ones, which don't exist in git.
+      # The shinylive editor (edit/) is skipped. Fails the build if any page is left untagged.
+      - name: Add Google Analytics to every page
+        run: |
+          find _site -name index.html -not -path '*/edit/*' | while read -r f; do
+            perl -0pi -e 'BEGIN{local $/; open F,".github/ga-snippet.html"; $g=<F>} s#</body>#$g</body>#i' "$f"
+          done
+          missing=$(grep -rL G-WMVWTJ7M4X --include=index.html --exclude-dir=edit _site)
+          [ -z "$missing" ] || { echo "untagged: $missing"; exit 1; }
+
       - name: Report bundle size
         run: du -sh _site && find _site -type f | wc -l
 
