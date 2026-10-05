@@ -12,10 +12,26 @@
 
 name: Deploy dashboard
 
-# Republishes on every merge to main that touches something the site is built from.
-# The manual button stays for rebuilding without a code change. See docs/DEPLOYMENT.md.
+# Merging a PR into main (a push to main) that touches something the site is built from
+# rebuilds and republishes. Open PRs get the build only, no deploy, so a broken export
+# fails before merge. The manual button stays for rebuilding without a code change.
+# See docs/DEPLOYMENT.md.
 on:
   workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'indian-ecopolitical-growth/app.R'
+      - 'indian-ecopolitical-growth/R/**'
+      - 'indian-ecopolitical-growth/data_processed/**'
+      - 'topic-classification/*.ipynb'
+      - 'ecommerce-sales-dashboard/app.py'
+      - 'ecommerce-sales-dashboard/data/**'
+      - 'ecommerce-demand-forecasting/*.ipynb'
+      - 'ecommerce-demand-forecasting/app.py'
+      - 'ecommerce-demand-forecasting/data/**'
+      - 'site/**'
+      - '.github/workflows/deploy-dashboard.yml'
   push:
     branches: [main]
     paths:
@@ -37,7 +53,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages
+  group: pages-${{ github.event_name == 'pull_request' && github.ref || 'main' }}
   cancel-in-progress: false
 
 jobs:
@@ -134,6 +150,7 @@ jobs:
 
   deploy:
     needs: build
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
