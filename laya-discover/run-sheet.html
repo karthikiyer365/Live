@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Laya Discover</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700&family=IBM+Plex+Sans:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a single run-sheet column (status → results → what's built → next run → open questions), wide items scroll in their own boxes */
+:root {
+  --paper: #f6f7f9;
+  --sheet: #ffffff;
+  --ink: #151a22;
+  --ink-2: #4a5361;
+  --faint: #8a93a1;
+  --rule: #dfe3ea;
+  --accent: #2456c9;
+  --accent-wash: #e8eefb;
+  --arm-a: #6b7584;
+  --arm-b: #2456c9;
+  --good: #17784e; --good-wash: #e2f2ea;
+  --warn: #9a5b00; --warn-wash: #fbefdb;
+  --bad: #b3362a; --bad-wash: #fbe6e3;
+  --display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --body: "IBM Plex Sans", -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #12151a; --sheet: #1a1e25; --ink: #e8ebf0; --ink-2: #b4bcc8; --faint: #7f8896; --rule: #2c323c;
+    --accent: #7fa3f0; --accent-wash: #1d2840; --arm-a: #9aa3b1; --arm-b: #7fa3f0;
+    --good: #5fcb97; --good-wash: #16301f; --warn: #e6b25e; --warn-wash: #352712; --bad: #f08a7d; --bad-wash: #3a1c18;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #12151a; --sheet: #1a1e25; --ink: #e8ebf0; --ink-2: #b4bcc8; --faint: #7f8896; --rule: #2c323c;
+  --accent: #7fa3f0; --accent-wash: #1d2840; --arm-a: #9aa3b1; --arm-b: #7fa3f0;
+  --good: #5fcb97; --good-wash: #16301f; --warn: #e6b25e; --warn-wash: #352712; --bad: #f08a7d; --bad-wash: #3a1c18;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 400 1rem/1.6 var(--body); padding-inline: 1.25rem; padding-block: 2.5rem 4rem; }
+main { max-width: 56rem; margin: 0 auto; display: grid; gap: 2.75rem; }
+h1, h2 { font-family: var(--display); font-weight: 700; text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+h1 { font-size: clamp(1.9rem, 4vw, 2.6rem); line-height: 1.1; }
+h2 { font-size: 1.35rem; }
+h3 { font: 600 1rem/1.35 var(--body); margin: 0; }
+p { margin: 0; max-width: 68ch; }
+code, .mono { font-family: var(--mono); font-size: 0.86em; }
+a { color: var(--accent); }
+section { display: grid; gap: 1rem; }
+.eyebrow { font: 500 0.75rem/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); }
+.lede { font-size: 1.12rem; color: var(--ink-2); }
+
+/* header */
+header { display: grid; gap: 0.9rem; }
+.facts { display: flex; flex-wrap: wrap; gap: 0.5rem 1.4rem; font: 0.85rem/1.4 var(--mono); color: var(--ink-2); }
+.facts b { color: var(--ink); font-weight: 500; }
+
+/* pills */
+.pill { display: inline-block; font: 500 0.72rem/1 var(--mono); letter-spacing: 0.04em; text-transform: uppercase; padding: 0.3rem 0.5rem; border-radius: 4px; white-space: nowrap; }
+.pill.done { background: var(--good-wash); color: var(--good); }
+.pill.next { background: var(--accent-wash); color: var(--accent); }
+.pill.gate { background: var(--warn-wash); color: var(--warn); }
+.pill.risk { background: var(--bad-wash); color: var(--bad); }
+
+/* results */
+.verdict { background: var(--sheet); border: 1px solid var(--rule); border-radius: 8px; padding: 1.1rem 1.25rem; display: grid; gap: 0.4rem; }
+.verdict strong { font-family: var(--display); font-size: 1.2rem; font-weight: 700; }
+.scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 0.92rem; font-variant-numeric: tabular-nums; }
+th, td { padding: 0.5rem 0.7rem; border-bottom: 1px solid var(--rule); text-align: left; vertical-align: top; }
+th { font: 500 0.75rem/1.3 var(--mono); letter-spacing: 0.04em; text-transform: uppercase; color: var(--faint); border-bottom-color: var(--ink-2); }
+td.n, th.n { text-align: right; font-family: var(--mono); font-size: 0.88rem; }
+td.best { font-weight: 600; color: var(--ink); }
+tr.base td { color: var(--ink-2); }
+caption { caption-side: bottom; text-align: left; font-size: 0.82rem; color: var(--faint); padding-top: 0.6rem; }
+
+figure { margin: 0; background: var(--sheet); border: 1px solid var(--rule); border-radius: 8px; padding: 1rem 1.1rem 0.8rem; }
+figure svg { display: block; width: 100%; height: auto; min-width: 34rem; }
+figcaption { font-size: 0.82rem; color: var(--faint); margin-top: 0.4rem; }
+svg text { font-family: var(--mono); fill: var(--ink-2); }
+svg .lbl { fill: var(--ink); font-family: var(--body); }
+svg .grid { stroke: var(--rule); stroke-width: 1; }
+svg .barA { fill: var(--arm-a); }
+svg .barB { fill: var(--arm-b); }
+
+/* pipeline */
+.pipe { background: var(--sheet); border: 1px solid var(--rule); border-radius: 8px; padding: 1rem 1.1rem; overflow-x: auto; }
+.pipe pre { margin: 0; font: 0.8rem/1.55 var(--mono); color: var(--ink); }
+.pipe .ok { color: var(--good); }
+.pipe .dim { color: var(--faint); }
+
+.list { display: grid; gap: 0; border-top: 1px solid var(--rule); }
+.item { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.25rem 1rem; padding: 0.75rem 0; border-bottom: 1px solid var(--rule); }
+.item p { grid-column: 1 / -1; color: var(--ink-2); font-size: 0.92rem; }
+.item h3 code { font-size: 0.85em; }
+
+/* run plan */
+.steps { display: grid; gap: 0.75rem; counter-reset: step; }
+.step { display: grid; grid-template-columns: 2.6rem minmax(0, 1fr); gap: 0 0.9rem; background: var(--sheet); border: 1px solid var(--rule); border-radius: 8px; padding: 1rem 1.1rem; }
+.step::before { counter-increment: step; content: "R" counter(step); font: 500 0.95rem/1.4 var(--mono); color: var(--accent); }
+.step > div { display: grid; gap: 0.45rem; }
+.step .head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0.4rem 1rem; }
+.step p { color: var(--ink-2); font-size: 0.93rem; }
+.gate-line { font-size: 0.88rem; color: var(--ink); background: var(--warn-wash); border-radius: 5px; padding: 0.45rem 0.65rem; }
+.gate-line b { color: var(--warn); font-family: var(--mono); font-weight: 500; font-size: 0.82rem; letter-spacing: 0.04em; text-transform: uppercase; margin-right: 0.35rem; }
+.cmd { font: 0.8rem/1.5 var(--mono); background: var(--paper); border: 1px solid var(--rule); border-radius: 5px; padding: 0.55rem 0.7rem; overflow-x: auto; white-space: pre; }
+
+.twocol { display: grid; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); gap: 1rem; }
+.panel { background: var(--sheet); border: 1px solid var(--rule); border-radius: 8px; padding: 1rem 1.1rem; display: grid; gap: 0.5rem; align-content: start; }
+.panel ul { margin: 0; padding-left: 1.1rem; display: grid; gap: 0.35rem; font-size: 0.93rem; color: var(--ink-2); }
+.kv { display: grid; grid-template-columns: auto 1fr; gap: 0.3rem 1rem; font-size: 0.9rem; }
+.kv dt { font-family: var(--mono); font-size: 0.82rem; color: var(--faint); }
+.kv dd { margin: 0; font-variant-numeric: tabular-nums; }
+.est { font-size: 0.82rem; color: var(--faint); }
+
+ol.q { margin: 0; padding-left: 1.3rem; display: grid; gap: 0.5rem; color: var(--ink-2); }
+ol.q b { color: var(--ink); font-weight: 600; }
+footer { font-size: 0.82rem; color: var(--faint); border-top: 1px solid var(--rule); padding-top: 1rem; }
+
+@media (max-width: 34rem) {
+  .step { grid-template-columns: 1fr; gap: 0.3rem; }
+}
+</style>
+
+<main>
+  <header>
+    <p class="eyebrow">Run sheet · ticket-type routing</p>
+    <h1>Laya Discover</h1>
+    <p class="lede">Can a pretrained decision model route support tickets better than the TF-IDF + Logistic Regression baseline? Arms A–C are built and scored on validation. Arm D, fine-tuning Laya on the Mac, is the next run.</p>
+    <div class="facts">
+      <span>branch <b>feat/laya-discover</b></span>
+      <span>model <b>convaiinnovations/laya</b> · 421M</span>
+      <span>machine <b>M3 · 16 GB · MPS</b></span>
+      <span>test set <b>sealed</b></span>
+      <span>commits <b>none yet</b></span>
+    </div>
+  </header>
+
+  <section>
+    <p class="eyebrow">Where we stand · validation, 2,334 tickets</p>
+    <h2>Zero-shot Laya already ties the baseline</h2>
+    <div class="verdict">
+      <strong>79.2% vs 79.0% accuracy, with no training</strong>
+      <p>Inside the ±1 point noise band, so a tie. Laya gets there differently: much better on Incident, much worse on Problem. Cleaning the text changed nothing, so Arm D trains on raw text.</p>
+    </div>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Arm</th><th class="n">Accuracy</th><th class="n">Macro F1</th><th class="n">Problem recall</th><th class="n">ECE</th><th class="n">Auto-routed ≥0.75</th><th class="n">Acc. when routed</th><th class="n">s / ticket</th></tr></thead>
+        <tbody>
+          <tr class="base"><td>A · Logistic Regression (frozen)</td><td class="n">0.790</td><td class="n best">0.807</td><td class="n best">0.577</td><td class="n best">0.045</td><td class="n best">48.5%</td><td class="n">95.6%</td><td class="n best">~0</td></tr>
+          <tr><td>B · Laya zero-shot, raw text</td><td class="n best">0.792</td><td class="n">0.784</td><td class="n">0.332</td><td class="n">0.133</td><td class="n">29.3%</td><td class="n best">99.4%</td><td class="n">0.167</td></tr>
+          <tr><td>C · Laya zero-shot, cleaned text</td><td class="n">0.789</td><td class="n">0.783</td><td class="n">0.334</td><td class="n">0.131</td><td class="n">29.2%</td><td class="n best">99.4%</td><td class="n">0.160</td></tr>
+        </tbody>
+        <caption>Bold = best in column. ECE: lower means confidence matches accuracy. B and C give the same answer on 99.7% of tickets.</caption>
+      </table>
+    </div>
+
+    <figure>
+      <div class="scroll">
+      <svg viewBox="0 0 640 250" role="img" aria-label="Recall per ticket type for Arm A and Arm B">
+        <!-- scale: x = 130 + recall * 470 -->
+        <line class="grid" x1="130" y1="14" x2="130" y2="214"/>
+        <line class="grid" x1="247.5" y1="14" x2="247.5" y2="214"/>
+        <line class="grid" x1="365" y1="14" x2="365" y2="214"/>
+        <line class="grid" x1="482.5" y1="14" x2="482.5" y2="214"/>
+        <line class="grid" x1="600" y1="14" x2="600" y2="214"/>
+        <text x="130" y="232" text-anchor="middle" font-size="11">0</text>
+        <text x="247.5" y="232" text-anchor="middle" font-size="11">0.25</text>
+        <text x="365" y="232" text-anchor="middle" font-size="11">0.50</text>
+        <text x="482.5" y="232" text-anchor="middle" font-size="11">0.75</text>
+        <text x="600" y="232" text-anchor="middle" font-size="11">1.00</text>
+
+        <text class="lbl" x="118" y="42" text-anchor="end" font-size="13">Incident</text>
+        <rect class="barA" x="130" y="22" width="334.6" height="14" rx="2"/><text x="470" y="33" font-size="11">0.712</text>
+        <rect class="barB" x="130" y="38" width="412.7" height="14" rx="2"/><text x="548" y="49" font-size="11">0.878</text>
+
+        <text class="lbl" x="118" y="92" text-anchor="end" font-size="13">Request</text>
+        <rect class="barA" x="130" y="72" width="465.8" height="14" rx="2"/><text x="600" y="83" font-size="11" dx="4">0.991</text>
+        <rect class="barB" x="130" y="88" width="443.2" height="14" rx="2"/><text x="578" y="99" font-size="11">0.943</text>
+
+        <text class="lbl" x="118" y="142" text-anchor="end" font-size="13">Problem</text>
+        <rect class="barA" x="130" y="122" width="271.2" height="14" rx="2"/><text x="407" y="133" font-size="11">0.577</text>
+        <rect class="barB" x="130" y="138" width="156.0" height="14" rx="2"/><text x="292" y="149" font-size="11">0.332</text>
+
+        <text class="lbl" x="118" y="192" text-anchor="end" font-size="13">Change</text>
+        <rect class="barA" x="130" y="172" width="450.7" height="14" rx="2"/><text x="586" y="183" font-size="11">0.959</text>
+        <rect class="barB" x="130" y="188" width="452.6" height="14" rx="2"/><text x="588" y="199" font-size="11">0.963</text>
+      </svg>
+      </div>
+      <figcaption><span style="color:var(--arm-a)">■</span> A · Logistic Regression &nbsp; <span style="color:var(--arm-b)">■</span> B · Laya zero-shot. Recall per true type on validation. Laya calls 66.6% of Problem tickets Incident, the same blurry line the baseline found in the labels.</figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <p class="eyebrow">Implemented</p>
+    <h2>What is built and checked</h2>
+    <div class="pipe"><pre>topic-classification/department_classifier_pipeline.ipynb
+  └─ NEW cell "Phase 4B (export)" ─────────► artifacts/splits.csv   <span class="dim">(gitignored · 16,338 rows)</span>
+                                              raw_row · family_id · split · type · text_clean
+                                                    │
+laya-discover/laya_classifier.ipynb                 ▼
+  ├─ Phase 1  load split + raw text  ──────► <span class="ok">✓ same rows · same families · 11,670 / 2,334 / 2,334</span>
+  ├─ Phase 2  one score() for all arms
+  │    └─ Arm A  joblib on validation  ────► <span class="ok">✓ reproduces baseline 0.7896 / 0.8075</span>
+  ├─ Phase 3  Laya zero-shot (one typed question, written once)
+  │    ├─ smoke test, 50 tickets  ─────────► <span class="ok">✓ prediction file valid</span>
+  │    ├─ Arm B  raw text      6.5 min
+  │    └─ Arm C  cleaned text  6.2 min  ───► predictions/*.csv  <span class="ok">✓ contract checked</span>
+  └─ Phase 4  compare  ────────────────────► table · cleaning verdict · confusion · conclusion</pre></div>
+
+    <div class="list">
+      <div class="item"><h3><code>department_classifier_pipeline.ipynb</code></h3><span class="pill done">+38 lines</span><p>One export cell after the type split. Ran headless up to that cell; every split output matched the committed notebook. No other output changed.</p></div>
+      <div class="item"><h3><code>laya-discover/laya_classifier.ipynb</code></h3><span class="pill done">new · executed</span><p>Phases 1–4 with outputs and a written conclusion. Runs in about 13 minutes on the Mac.</p></div>
+      <div class="item"><h3><code>laya-discover/requirements.txt</code></h3><span class="pill done">new</span><p>Python 3.12 venv: laya 0.3.28, torch 2.14.1, transformers 5.18.0, scikit-learn 1.9.1, pandas 3.0.6.</p></div>
+      <div class="item"><h3><code>.gitignore</code></h3><span class="pill done">+2 lines</span><p>Ignores <code>splits.csv</code> (it holds dataset text, like <code>data/</code>) and <code>laya-discover/predictions/</code>.</p></div>
+      <div class="item"><h3><code>.scratch/laya-discover/spec.md</code></h3><span class="pill done">ready-for-agent</span><p>The spec in ASD-STE100 style: arms, rules, seams, out of scope.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <p class="eyebrow">Next run · Arm D</p>
+    <h2>Fine-tune Laya on the training rows</h2>
+    <p>Start from Laya's official Apple-Silicon fine-tune script and change only what our evaluation rules require. Each step has a gate; a failed gate stops the run before hours are spent.</p>
+
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Official script does</th><th>Arm D does instead</th><th>Why</th></tr></thead>
+        <tbody>
+          <tr><td>Trains on its own benchmark dataset</td><td>Our 11,670 training rows from <code>splits.csv</code>, raw text, same typed question as Arm B</td><td>Same rows and question as every other arm</td></tr>
+          <tr><td>Calibrates on a random 10% of training rows (lines 257–261)</td><td>Trains on all training rows; calibrates on validation</td><td>A random slice holds reworded siblings of training tickets: a leak</td></tr>
+          <tr><td>Saves a checkpoint each epoch, never scores validation</td><td>Scores validation after each epoch and keeps the best</td><td>The epoch is chosen on validation, never on test</td></tr>
+          <tr><td>Exports a checkpoint</td><td>Also writes <code>predictions/arm_d_*.csv</code> in the shared format</td><td>The same <code>score()</code> judges every arm</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="steps">
+      <div class="step"><div>
+        <div class="head"><h3>Build the training items</h3><span class="pill next">setup</span></div>
+        <p>Turn each training ticket into a Laya item: raw <code>subject + body</code>, the four-type question, and its true type as the target. Read <code>laya.common</code> (<code>build_sequence</code>, <code>proper_reward</code>) first so the format matches the script.</p>
+        <div class="gate-line"><b>Gate</b>11,670 items · no validation or test row inside · 4 options per item</div>
+      </div></div>
+
+      <div class="step"><div>
+        <div class="head"><h3>Smoke run: 200 tickets, 1 epoch</h3><span class="pill gate">~10 min</span></div>
+        <p>Measures the real cost on this Mac before committing hours, and checks that the loss falls on a small set.</p>
+        <div class="cmd">--micro-batch 1 --grad-accum 32 --epochs 1   # gradient checkpointing on, fp32</div>
+        <div class="gate-line"><b>Gate</b>loss falls · peak memory fits in 16 GB · seconds per update recorded → real epoch-time estimate</div>
+      </div></div>
+
+      <div class="step"><div>
+        <div class="head"><h3>Full run, seed 42, script defaults</h3><span class="pill next">main run</span></div>
+        <div class="kv">
+          <dt>optimizer</dt><dd>AdamW, weight decay 0.01</dd>
+          <dt>learning rate</dt><dd>encoder 2.5e-5 · head 1e-4 · cosine decay to 1e-6</dd>
+          <dt>batch</dt><dd>1 ticket × 32 accumulated = 32 per update → 365 updates per epoch</dd>
+          <dt>epochs</dt><dd>up to 4; score validation after each, keep the best</dd>
+          <dt>loss</dt><dd>cross-entropy + Laya's proper-scoring RL term (unchanged)</dd>
+        </div>
+        <div class="gate-line"><b>Stop rule</b>more than 3 h per epoch, or out of memory at micro-batch 1 → move this step to Colab, nothing else changes</div>
+      </div></div>
+
+      <div class="step"><div>
+        <div class="head"><h3>Calibrate on validation</h3><span class="pill next">logged selection</span></div>
+        <p>Fit one temperature on validation with the script's own <code>fit_temperature</code>, then re-score ECE and the auto-route line for the 95% target. Logged as a selection step.</p>
+        <div class="gate-line"><b>Gate</b>keep the temperature only if ECE falls and log-loss does not rise (the baseline's rule)</div>
+      </div></div>
+
+      <div class="step"><div>
+        <div class="head"><h3>Two more seeds</h3><span class="pill next">variance</span></div>
+        <p>Same settings, seeds 43 and 44. Fine-tuning scores can swing between seeds, so a single run can't prove a 1-point win.</p>
+        <div class="gate-line"><b>Gate</b>report mean and spread across the 3 seeds; the chosen model is fixed after this</div>
+      </div></div>
+
+      <div class="step"><div>
+        <div class="head"><h3>Open the test set once</h3><span class="pill risk">one shot</span></div>
+        <p>Score B and D on the 2,334 test tickets. A keeps its frozen model-card numbers (79.95% accuracy, 0.815 macro F1).</p>
+        <div class="gate-line"><b>Decision</b>Laya replaces the baseline only if D's test accuracy is above 80.95% (A + 1 point), with the cost shown beside it</div>
+      </div></div>
+    </div>
+
+    <div class="twocol">
+      <div class="panel">
+        <h3>Time budget</h3>
+        <div class="kv">
+          <dt>measured</dt><dd>inference 0.16 s per ticket on MPS</dd>
+          <dt>assumed</dt><dd>training ≈ 3–4× inference (backward pass + checkpoint recompute)</dd>
+          <dt>per epoch</dt><dd>≈ 1.6–2.1 h, plus 6.5 min validation scoring</dd>
+          <dt>4 epochs</dt><dd>≈ 7–8.5 h per seed</dd>
+        </div>
+        <p class="est">An estimate until the smoke run replaces it with a measurement.</p>
+      </div>
+      <div class="panel">
+        <h3>What D has to show</h3>
+        <ul>
+          <li>Problem recall well above 0.33. The Incident ↔ Problem line is the main weak spot</li>
+          <li>ECE close to the baseline's 0.045, so the auto-route line is trustworthy</li>
+          <li>More tickets auto-routed than A's 48.5% at 95%+ accuracy</li>
+          <li>Accuracy over 1 point above A. If D also stops near 80%, the label noise is the ceiling, not the model</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <p class="eyebrow">Open questions</p>
+    <h2>Before the run starts</h2>
+    <ol class="q">
+      <li><b>Calibration in Arm D?</b> Fitting a temperature on validation is a selection step. Include it (planned above) or report raw confidence only?</li>
+      <li><b>Seeds.</b> Three seeds roughly triples the Mac time (≈ 21–25 h). Run all three locally, or move seeds 43–44 to Colab?</li>
+      <li><b>Commit.</b> Commit <code>.scratch/</code> on <code>do CP</code>, or keep it local? The <code>laya-discover/learn/</code> lesson folder from the earlier detour can be deleted.</li>
+    </ol>
+  </section>
+
+  <footer>Numbers come from <code>laya-discover/laya_classifier.ipynb</code> (validation) and the baseline's <code>artifacts/model_card.json</code> (test). Script line references: Laya <code>notebooks/laya_finetune_typed_decisions_mps.py</code>, read 2026-10-05.</footer>
+</main>
