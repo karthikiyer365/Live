@@ -6,4 +6,4 @@ topic-classification/data/
 topic-classification/artifacts/*.joblib
 __pycache__/
 topic-classification/artifacts/splits.csv
-laya-discover/predictions/
+laya-discover/checkpoints/
