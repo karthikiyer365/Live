@@ -5,3 +5,5 @@ topic-classification/data/
 .ipynb_checkpoints/
 topic-classification/artifacts/*.joblib
 __pycache__/
+topic-classification/artifacts/splits.csv
+laya-discover/checkpoints/

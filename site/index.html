@@ -9,7 +9,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Weekend at Karthik's — Karthik Iyer</title>
-<meta name="description" content="Things I built to answer a question with data: an e-commerce demand forecast, an e-commerce sales dashboard, a support ticket classifier and a dashboard of India's economic and political growth.">
+<meta name="description" content="Things I built to answer a question with data: an e-commerce demand forecast, an e-commerce sales dashboard, a support ticket classifier, a Laya vs logistic regression comparison and a dashboard of India's economic and political growth.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://projects.karthikiyer.info/">
 <meta property="og:title" content="Weekend at Karthik's — Karthik Iyer">
@@ -131,6 +131,11 @@
 <script>
   // Newest first. The latest bar shows the first five; the landing page shows all.
   const PROJECTS = [
+    { id: "laya", src: "laya/", short: "Laya vs Baseline", name: "Laya vs Logistic Regression",
+      kind: "ML · NLP", date: "7 Oct 2026", img: "img/laya-vs-baseline.png",
+      alt: "Bar chart of test accuracy: the baseline at 79.95%, Laya zero-shot at 78.36%, fine-tuned Laya at 79.73% and 81.66% for two seeds, and a red line at 80.95%",
+      summary: "Does a fine-tuned 421M-parameter model route tickets better than the TF-IDF baseline? On the sealed test set, two seeds average 80.70% against 79.95%. That is below the 1-point line set in advance, so it is a tie. Label noise is not the cause of the ceiling.",
+      links: [["Read the notebook →", "#laya"]] },
     { id: "forecast", src: "forecast/", pages: { "forecast-app": "forecast-app/" }, short: "Demand Forecast", name: "E-commerce Demand Forecasting",
       kind: "ML · Forecasting", date: "30 Sept 2026", img: "img/demand-forecast.png",
       alt: "The promo planner: a product's weekly demand history, then a 4-week forecast with its p90 band and two promo weeks shaded",

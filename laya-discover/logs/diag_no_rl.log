@@ -1,0 +1,15 @@
+Fetching 6 files:   0%|          | 0/6 [00:00<?, ?it/s]Fetching 6 files: 100%|██████████| 6/6 [00:00<00:00, 2659.39it/s]
+[03:43:03] device=mps seed=42 train=11,670 val=2,334 micro_batch=2 grad_accum=16 epochs=4 updates=1,460 warmup=146 lr_scale=1.0 rl=False checkpointing=True abort=True
+[03:45:17] epoch 1/4 · 200/11,670 tickets · loss 0.4524 (last 100: ce 0.452, rl -0.051) · mps 8.7 GB · epoch ETA 2.14 h
+[03:47:27] epoch 1/4 · 400/11,670 tickets · loss 0.4224 (last 100: ce 0.392, rl -0.050) · mps 8.7 GB · epoch ETA 2.06 h
+[03:49:35] epoch 1/4 · 600/11,670 tickets · loss 0.4053 (last 100: ce 0.371, rl -0.076) · mps 8.7 GB · epoch ETA 2.01 h
+[03:51:49] epoch 1/4 · 800/11,670 tickets · loss 0.4091 (last 100: ce 0.420, rl -0.065) · mps 8.7 GB · epoch ETA 1.98 h
+[03:54:02] epoch 1/4 · 1,000/11,670 tickets · loss 0.4086 (last 100: ce 0.406, rl -0.006) · mps 8.7 GB · epoch ETA 1.95 h
+[03:56:17] epoch 1/4 · 1,200/11,670 tickets · loss 0.3979 (last 100: ce 0.345, rl -0.063) · mps 8.7 GB · epoch ETA 1.92 h
+[03:58:31] epoch 1/4 · 1,400/11,670 tickets · loss 0.4002 (last 100: ce 0.414, rl +0.017) · mps 8.7 GB · epoch ETA 1.89 h
+[04:00:41] epoch 1/4 · 1,600/11,670 tickets · loss 0.3923 (last 100: ce 0.338, rl -0.127) · mps 8.7 GB · epoch ETA 1.85 h
+[04:02:56] epoch 1/4 · 1,800/11,670 tickets · loss 0.3978 (last 100: ce 0.441, rl -0.094) · mps 8.7 GB · epoch ETA 1.82 h
+[04:05:07] epoch 1/4 · 2,000/11,670 tickets · loss 0.3928 (last 100: ce 0.348, rl +0.001) · mps 8.7 GB · epoch ETA 1.78 h
+[04:07:19] epoch 1/4 · 2,200/11,670 tickets · loss 0.3925 (last 100: ce 0.390, rl -0.135) · mps 8.7 GB · epoch ETA 1.74 h
+[04:09:35] epoch 1/4 · 2,400/11,670 tickets · loss 0.3926 (last 100: ce 0.394, rl +0.059) · mps 8.7 GB · epoch ETA 1.71 h
+[04:09:35] STOP at --max-tickets 2400; nothing saved

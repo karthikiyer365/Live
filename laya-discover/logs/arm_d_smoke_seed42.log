@@ -1,0 +1,5 @@
+Fetching 6 files:   0%|          | 0/6 [00:00<?, ?it/s]Fetching 6 files: 100%|██████████| 6/6 [00:00<00:00, 3363.52it/s]
+[01:06:45] device=mps seed=42 train=200 val=100 micro_batch=2 grad_accum=16 epochs=1 updates=7
+[01:08:13] epoch 1/1 · 200/200 tickets · loss 0.5482 · mps 8.7 GB · epoch ETA 0.00 h
+[01:08:33] EPOCH 1 done · 0.02 h · 7 updates · avg loss 0.5482 · validation accuracy 0.7400 (0.094 s/ticket) · saved checkpoints/smoke_seed42/epoch1
+[01:08:33] DONE

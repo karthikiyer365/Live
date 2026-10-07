@@ -1,0 +1,9 @@
+Fetching 6 files:   0%|          | 0/6 [00:00<?, ?it/s]Fetching 6 files: 100%|██████████| 6/6 [00:00<00:00, 3284.50it/s]
+[02:22:24] device=mps seed=42 train=11,670 val=2,334 micro_batch=2 grad_accum=16 epochs=4 updates=1,460 warmup=146
+[02:23:44] epoch 1/4 · 200/11,670 tickets · loss 0.3986 (last 100: ce 0.450, rl -0.051) · mps 8.7 GB · epoch ETA 1.27 h
+[02:26:38] epoch 1/4 · 400/11,670 tickets · loss 0.3641 (last 100: ce 0.382, rl -0.052) · mps 8.7 GB · epoch ETA 1.99 h
+[02:29:00] epoch 1/4 · 600/11,670 tickets · loss 0.3505 (last 100: ce 0.400, rl -0.076) · mps 8.7 GB · epoch ETA 2.03 h
+[02:31:25] epoch 1/4 · 800/11,670 tickets · loss 0.3789 (last 100: ce 0.507, rl -0.043) · mps 8.7 GB · epoch ETA 2.04 h
+[02:33:53] epoch 1/4 · 1,000/11,670 tickets · loss 0.4063 (last 100: ce 0.511, rl +0.005) · mps 8.7 GB · epoch ETA 2.04 h
+[02:36:16] epoch 1/4 · 1,200/11,670 tickets · loss 0.4511 (last 100: ce 0.673, rl +0.002) · mps 8.7 GB · epoch ETA 2.02 h
+ABORT: 100-step mean loss 1.687 is more than 2x the first (0.399) · this window: ce 1.632, rl +0.054
