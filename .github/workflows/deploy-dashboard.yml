@@ -2,6 +2,7 @@
 #   /          site/index.html — landing page + header that switches between projects
 #   /india/    India EcoPolitical dashboard, exported to WebAssembly
 #   /tickets/  topic-classification notebook, rendered to HTML (no code)
+#   /laya/     laya-discover notebook (Laya vs the baseline), rendered to HTML (no code)
 #   /sales/    e-commerce sales dashboard (Shiny for Python), exported to WebAssembly
 #   /forecast/      demand-forecasting notebook, rendered to HTML (no code)
 #   /forecast-app/  promo planner (Shiny for Python), exported to WebAssembly
@@ -25,6 +26,7 @@ on:
       - 'indian-ecopolitical-growth/R/**'
       - 'indian-ecopolitical-growth/data_processed/**'
       - 'topic-classification/*.ipynb'
+      - 'laya-discover/*.ipynb'
       - 'ecommerce-sales-dashboard/app.py'
       - 'ecommerce-sales-dashboard/data/**'
       - 'ecommerce-demand-forecasting/*.ipynb'
@@ -39,6 +41,7 @@ on:
       - 'indian-ecopolitical-growth/R/**'
       - 'indian-ecopolitical-growth/data_processed/**'
       - 'topic-classification/*.ipynb'
+      - 'laya-discover/*.ipynb'
       - 'ecommerce-sales-dashboard/app.py'
       - 'ecommerce-sales-dashboard/data/**'
       - 'ecommerce-demand-forecasting/*.ipynb'
@@ -104,6 +107,14 @@ jobs:
             --output-dir _site/tickets --output index
           sed -i 's#</head>#<link rel="stylesheet" href="../notebook.css"></head>#' _site/tickets/index.html
 
+      # Rendered from the committed outputs, like the tickets notebook. No data, model or GPU is needed.
+      - name: Render laya-discover notebook
+        run: |
+          jupyter nbconvert --to html --no-input \
+            laya-discover/laya_classifier.ipynb \
+            --output-dir _site/laya --output index
+          sed -i 's#</head>#<link rel="stylesheet" href="../notebook.css"></head>#' _site/laya/index.html
+
       # Rendered from committed outputs like the tickets notebook; the notebook also writes data/forecasts.csv for the planner.
       - name: Render demand-forecasting notebook
         run: |
@@ -131,7 +142,7 @@ jobs:
       - name: Add site shell (landing page, header, notebook fonts, images)
         run: cp -r site/. _site/
 
-      # One snippet for all six pages: the landing page plus the five generated ones, which don't exist in git.
+      # One snippet for all seven pages: the landing page plus the six generated ones, which don't exist in git.
       # The shinylive editor (edit/) is skipped. Fails the build if any page is left untagged.
       - name: Add Google Analytics to every page
         run: |
