@@ -131,191 +131,167 @@ footer { font-size: 0.82rem; color: var(--faint); border-top: 1px solid var(--ru
   <header>
     <p class="eyebrow">Run sheet · ticket-type routing</p>
     <h1>Laya Discover</h1>
-    <p class="lede">Can a pretrained decision model route support tickets better than the TF-IDF + Logistic Regression baseline? Arms A–C are built and scored on validation. Arm D, fine-tuning Laya on the Mac, is the next run.</p>
+    <p class="lede">Can a pretrained decision model route support tickets better than the TF-IDF + Logistic Regression baseline? All models are built, scored and judged on the sealed test set. Fine-tuned Laya ties the baseline: +0.75 points on average, below the 1-point line.</p>
     <div class="facts">
       <span>branch <b>feat/laya-discover</b></span>
       <span>model <b>convaiinnovations/laya</b> · 421M</span>
       <span>machine <b>M3 · 16 GB · MPS</b></span>
-      <span>test set <b>sealed</b></span>
-      <span>commits <b>none yet</b></span>
+      <span>test set <b>opened once</b></span>
+      <span>seeds <b>42 · 43</b> (44 not run)</span>
     </div>
   </header>
 
   <section>
-    <p class="eyebrow">Where we stand · validation, 2,334 tickets</p>
-    <h2>Zero-shot Laya already ties the baseline</h2>
+    <p class="eyebrow">Result · test set, 2,334 tickets, opened once</p>
+    <h2>Fine-tuned Laya ties the baseline</h2>
     <div class="verdict">
-      <strong>79.2% vs 79.0% accuracy, with no training</strong>
-      <p>Inside the ±1 point noise band, so a tie. Laya gets there differently: much better on Incident, much worse on Problem. Cleaning the text changed nothing, so Arm D trains on raw text.</p>
+      <strong>80.70% vs 79.95% accuracy (mean of 2 seeds): +0.75 points</strong>
+      <p>Laya had to beat the baseline by more than 1 point (above 80.95%). Seed 42 reaches 81.66%, seed 43 only 79.73%. The two seeds differ by 1.9 points on test, against 0.3 on validation, so the test set's own sampling noise (about ±0.8 points) is larger than the seed noise. The rule reports the mean: no win.</p>
     </div>
     <div class="scroll">
       <table>
-        <thead><tr><th>Arm</th><th class="n">Accuracy</th><th class="n">Macro F1</th><th class="n">Problem recall</th><th class="n">ECE</th><th class="n">Auto-routed ≥0.75</th><th class="n">Acc. when routed</th><th class="n">s / ticket</th></tr></thead>
+        <thead><tr><th>Model</th><th class="n">Accuracy</th><th class="n">Macro F1</th><th class="n">Problem recall</th><th class="n">ECE</th><th class="n">Auto-routed ≥0.75</th><th class="n">Acc. when routed</th></tr></thead>
         <tbody>
-          <tr class="base"><td>A · Logistic Regression (frozen)</td><td class="n">0.790</td><td class="n best">0.807</td><td class="n best">0.577</td><td class="n best">0.045</td><td class="n best">48.5%</td><td class="n">95.6%</td><td class="n best">~0</td></tr>
-          <tr><td>B · Laya zero-shot, raw text</td><td class="n best">0.792</td><td class="n">0.784</td><td class="n">0.332</td><td class="n">0.133</td><td class="n">29.3%</td><td class="n best">99.4%</td><td class="n">0.167</td></tr>
-          <tr><td>C · Laya zero-shot, cleaned text</td><td class="n">0.789</td><td class="n">0.783</td><td class="n">0.334</td><td class="n">0.131</td><td class="n">29.2%</td><td class="n best">99.4%</td><td class="n">0.160</td></tr>
+          <tr class="base"><td>A · Logistic Regression (frozen)</td><td class="n">79.95%</td><td class="n">0.815</td><td class="n best">0.597</td><td class="n">0.063</td><td class="n">46.1%</td><td class="n best">96.4%</td></tr>
+          <tr><td>B · Laya zero-shot, raw text</td><td class="n">78.36%</td><td class="n">0.787</td><td class="n">0.383</td><td class="n">0.138</td><td class="n">26.1%</td><td class="n best">99.2%</td></tr>
+          <tr><td>D seed 42 · epoch 3 · calibrated</td><td class="n best">81.66%</td><td class="n best">0.827</td><td class="n">0.517</td><td class="n">0.064</td><td class="n">82.0%</td><td class="n">87.2%</td></tr>
+          <tr><td>D seed 43 · epoch 2 · calibrated</td><td class="n">79.73%</td><td class="n">0.818</td><td class="n best">0.609</td><td class="n best">0.046</td><td class="n">71.1%</td><td class="n">89.2%</td></tr>
+          <tr><td><b>D · mean of 2 seeds</b></td><td class="n"><b>80.70%</b></td><td class="n">0.823</td><td class="n">0.563</td><td class="n">n/a</td><td class="n">n/a</td><td class="n">n/a</td></tr>
         </tbody>
-        <caption>Bold = best in column. ECE: lower means confidence matches accuracy. B and C give the same answer on 99.7% of tickets.</caption>
+        <caption>Bold = best in column. Model A reproduces the baseline's frozen 79.95%. Calibration changes confidence only, never the answer, so raw and calibrated accuracy are equal. ECE: lower means confidence matches accuracy.</caption>
       </table>
     </div>
 
-    <figure>
-      <div class="scroll">
-      <svg viewBox="0 0 640 250" role="img" aria-label="Recall per ticket type for Arm A and Arm B">
-        <!-- scale: x = 130 + recall * 470 -->
-        <line class="grid" x1="130" y1="14" x2="130" y2="214"/>
-        <line class="grid" x1="247.5" y1="14" x2="247.5" y2="214"/>
-        <line class="grid" x1="365" y1="14" x2="365" y2="214"/>
-        <line class="grid" x1="482.5" y1="14" x2="482.5" y2="214"/>
-        <line class="grid" x1="600" y1="14" x2="600" y2="214"/>
-        <text x="130" y="232" text-anchor="middle" font-size="11">0</text>
-        <text x="247.5" y="232" text-anchor="middle" font-size="11">0.25</text>
-        <text x="365" y="232" text-anchor="middle" font-size="11">0.50</text>
-        <text x="482.5" y="232" text-anchor="middle" font-size="11">0.75</text>
-        <text x="600" y="232" text-anchor="middle" font-size="11">1.00</text>
-
-        <text class="lbl" x="118" y="42" text-anchor="end" font-size="13">Incident</text>
-        <rect class="barA" x="130" y="22" width="334.6" height="14" rx="2"/><text x="470" y="33" font-size="11">0.712</text>
-        <rect class="barB" x="130" y="38" width="412.7" height="14" rx="2"/><text x="548" y="49" font-size="11">0.878</text>
-
-        <text class="lbl" x="118" y="92" text-anchor="end" font-size="13">Request</text>
-        <rect class="barA" x="130" y="72" width="465.8" height="14" rx="2"/><text x="600" y="83" font-size="11" dx="4">0.991</text>
-        <rect class="barB" x="130" y="88" width="443.2" height="14" rx="2"/><text x="578" y="99" font-size="11">0.943</text>
-
-        <text class="lbl" x="118" y="142" text-anchor="end" font-size="13">Problem</text>
-        <rect class="barA" x="130" y="122" width="271.2" height="14" rx="2"/><text x="407" y="133" font-size="11">0.577</text>
-        <rect class="barB" x="130" y="138" width="156.0" height="14" rx="2"/><text x="292" y="149" font-size="11">0.332</text>
-
-        <text class="lbl" x="118" y="192" text-anchor="end" font-size="13">Change</text>
-        <rect class="barA" x="130" y="172" width="450.7" height="14" rx="2"/><text x="586" y="183" font-size="11">0.959</text>
-        <rect class="barB" x="130" y="188" width="452.6" height="14" rx="2"/><text x="588" y="199" font-size="11">0.963</text>
-      </svg>
+    <div class="twocol">
+      <div class="panel">
+        <h3>What D had to show</h3>
+        <ul>
+          <li><b>Problem recall well above 0.33:</b> yes (0.52, 0.61), but only seed 43 reaches the baseline's 0.597</li>
+          <li><b>ECE near the baseline's:</b> yes after calibration (0.064, 0.046 vs 0.063)</li>
+          <li><b>More tickets auto-routed at 95%+ accuracy:</b> no. At the 0.75 line Laya routes 71–82% of tickets but only 87–89% are right; the baseline routes 46% at 96.4%</li>
+          <li><b>Accuracy more than 1 point above A:</b> no on the mean. The ceiling is not label noise (see below). The text may not fully decide Incident vs Problem</li>
+        </ul>
       </div>
-      <figcaption><span style="color:var(--arm-a)">■</span> A · Logistic Regression &nbsp; <span style="color:var(--arm-b)">■</span> B · Laya zero-shot. Recall per true type on validation. Laya calls 66.6% of Problem tickets Incident, the same blurry line the baseline found in the labels.</figcaption>
-    </figure>
-  </section>
-
-  <section>
-    <p class="eyebrow">Implemented</p>
-    <h2>What is built and checked</h2>
-    <div class="pipe"><pre>topic-classification/department_classifier_pipeline.ipynb
-  └─ NEW cell "Phase 4B (export)" ─────────► artifacts/splits.csv   <span class="dim">(gitignored · 16,338 rows)</span>
-                                              raw_row · family_id · split · type · text_clean
-                                                    │
-laya-discover/laya_classifier.ipynb                 ▼
-  ├─ Phase 1  load split + raw text  ──────► <span class="ok">✓ same rows · same families · 11,670 / 2,334 / 2,334</span>
-  ├─ Phase 2  one score() for all arms
-  │    └─ Arm A  joblib on validation  ────► <span class="ok">✓ reproduces baseline 0.7896 / 0.8075</span>
-  ├─ Phase 3  Laya zero-shot (one typed question, written once)
-  │    ├─ smoke test, 50 tickets  ─────────► <span class="ok">✓ prediction file valid</span>
-  │    ├─ Arm B  raw text      6.5 min
-  │    └─ Arm C  cleaned text  6.2 min  ───► predictions/*.csv  <span class="ok">✓ contract checked</span>
-  └─ Phase 4  compare  ────────────────────► table · cleaning verdict · confusion · conclusion</pre></div>
-
-    <div class="list">
-      <div class="item"><h3><code>department_classifier_pipeline.ipynb</code></h3><span class="pill done">+38 lines</span><p>One export cell after the type split. Ran headless up to that cell; every split output matched the committed notebook. No other output changed.</p></div>
-      <div class="item"><h3><code>laya-discover/laya_classifier.ipynb</code></h3><span class="pill done">new · executed</span><p>Phases 1–4 with outputs and a written conclusion. Runs in about 13 minutes on the Mac.</p></div>
-      <div class="item"><h3><code>laya-discover/requirements.txt</code></h3><span class="pill done">new</span><p>Python 3.12 venv: laya 0.3.28, torch 2.14.1, transformers 5.18.0, scikit-learn 1.9.1, pandas 3.0.6.</p></div>
-      <div class="item"><h3><code>.gitignore</code></h3><span class="pill done">+2 lines</span><p>Ignores <code>splits.csv</code> (it holds dataset text, like <code>data/</code>) and <code>laya-discover/predictions/</code>.</p></div>
-      <div class="item"><h3><code>.scratch/laya-discover/spec.md</code></h3><span class="pill done">ready-for-agent</span><p>The spec in ASD-STE100 style: arms, rules, seams, out of scope.</p></div>
+      <div class="panel">
+        <h3>Cost beside the result</h3>
+        <div class="kv">
+          <dt>Model A</dt><dd>seconds to train · near-instant to score</dd>
+          <dt>Model D</dt><dd>≈ 8.3–8.7 h of Mac training per seed</dd>
+          <dt>scoring</dt><dd>≈ 0.10 s per ticket on MPS (zero-shot: 0.17 s)</dd>
+          <dt>overfit</dt><dd>train loss falls to ≈ 0.007 while validation stays at 79–80%</dd>
+        </div>
+      </div>
     </div>
   </section>
 
   <section>
-    <p class="eyebrow">Next run · Arm D</p>
+    <p class="eyebrow">Validation · where choices were made</p>
+    <h2>Zero-shot ties, fine-tuning adds under one point</h2>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Model</th><th class="n">Accuracy</th><th class="n">Macro F1</th><th class="n">Problem recall</th><th class="n">ECE</th></tr></thead>
+        <tbody>
+          <tr class="base"><td>A · Logistic Regression</td><td class="n">78.96%</td><td class="n">0.807</td><td class="n best">0.577</td><td class="n best">0.045</td></tr>
+          <tr><td>B · Laya zero-shot, raw text</td><td class="n">79.2%</td><td class="n">0.784</td><td class="n">0.332</td><td class="n">0.133</td></tr>
+          <tr><td>C · Laya zero-shot, cleaned text</td><td class="n">78.9%</td><td class="n">0.783</td><td class="n">0.334</td><td class="n">0.131</td></tr>
+          <tr><td>D seed 42 · epoch 3 (chosen)</td><td class="n best">79.9%</td><td class="n">n/a</td><td class="n">0.485</td><td class="n">0.178 raw → 0.076 calibrated</td></tr>
+        </tbody>
+        <caption>B and C differ by 0.3 points, so cleaning does not matter and Model D trains on raw text. Seed 42 macro F1 is in the notebook.</caption>
+      </table>
+    </div>
+    <h3>Seed 43: choosing the epoch</h3>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Epoch</th><th class="n">Train loss</th><th class="n">Accuracy</th><th class="n">Macro F1</th><th class="n">Problem recall</th><th class="n">ECE (raw)</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td class="n">0.367</td><td class="n best">80.12%</td><td class="n">0.795</td><td class="n">0.351</td><td class="n">0.032</td></tr>
+          <tr><td><b>2 (chosen)</b></td><td class="n">0.205</td><td class="n">79.56%</td><td class="n best">0.816</td><td class="n best">0.561</td><td class="n">0.119</td></tr>
+          <tr><td>3</td><td class="n">0.056</td><td class="n">79.31%</td><td class="n">0.804</td><td class="n">0.456</td><td class="n">0.181</td></tr>
+          <tr><td>4</td><td class="n">0.007</td><td class="n">79.35%</td><td class="n">0.805</td><td class="n">0.460</td><td class="n">0.193</td></tr>
+        </tbody>
+        <caption>Rule fixed before training: accuracy decides; within 1 point is a tie → higher macro F1. All four epochs are within 1 point, so epoch 2 wins on macro F1. Temperature fitted on validation logits: T = 2.04, out-of-fold ECE 0.119 → 0.040.</caption>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <p class="eyebrow">What was run · Model D</p>
     <h2>Fine-tune Laya on the training rows</h2>
-    <p>Start from Laya's official Apple-Silicon fine-tune script and change only what our evaluation rules require. Each step has a gate; a failed gate stops the run before hours are spent.</p>
+    <p>Started from Laya's official Apple-Silicon fine-tune script and changed only what the evaluation rules, or a failure, required.</p>
 
     <div class="scroll">
       <table>
-        <thead><tr><th>Official script does</th><th>Arm D does instead</th><th>Why</th></tr></thead>
+        <thead><tr><th>Official script does</th><th>Model D does instead</th><th>Why</th></tr></thead>
         <tbody>
-          <tr><td>Trains on its own benchmark dataset</td><td>Our 11,670 training rows from <code>splits.csv</code>, raw text, same typed question as Arm B</td><td>Same rows and question as every other arm</td></tr>
-          <tr><td>Calibrates on a random 10% of training rows (lines 257–261)</td><td>Trains on all training rows; calibrates on validation</td><td>A random slice holds reworded siblings of training tickets: a leak</td></tr>
-          <tr><td>Saves a checkpoint each epoch, never scores validation</td><td>Scores validation after each epoch and keeps the best</td><td>The epoch is chosen on validation, never on test</td></tr>
-          <tr><td>Exports a checkpoint</td><td>Also writes <code>predictions/arm_d_*.csv</code> in the shared format</td><td>The same <code>score()</code> judges every arm</td></tr>
+          <tr><td>Trains on its own benchmark dataset</td><td>Our 11,670 training rows from <code>splits.csv</code>, raw text, same typed question as Model B</td><td>Same rows and question as every other model</td></tr>
+          <tr><td>Calibrates on a random 10% of training rows</td><td>Trains on all training rows; calibrates on validation logits</td><td>A random slice holds reworded siblings of training tickets: a leak</td></tr>
+          <tr><td>Saves one checkpoint, never scores validation</td><td>Saves every epoch and scores validation after each</td><td>The epoch is chosen on validation, never on test</td></tr>
+          <tr><td>Starts at full learning rate, adds an RL term to the loss</td><td>10% linear warmup, cross-entropy only (RL off)</td><td>Seed 42 diverged without warmup, and again with it while the RL term was on</td></tr>
+          <tr><td>No stop rule</td><td>Aborts on NaN or when loss doubles</td><td>A bad run dies in the first hour, not after eight</td></tr>
         </tbody>
       </table>
     </div>
 
     <div class="steps">
       <div class="step"><div>
-        <div class="head"><h3>Build the training items</h3><span class="pill next">setup</span></div>
-        <p>Turn each training ticket into a Laya item: raw <code>subject + body</code>, the four-type question, and its true type as the target. Read <code>laya.common</code> (<code>build_sequence</code>, <code>proper_reward</code>) first so the format matches the script.</p>
-        <div class="gate-line"><b>Gate</b>11,670 items · no validation or test row inside · 4 options per item</div>
+        <div class="head"><h3>Build the training items and smoke run</h3><span class="pill done">done</span></div>
+        <p>11,670 items, no validation or test row inside. The first smoke test ran 6× slow because memory swapped (about 15 GB). After quitting the Colima VM and Chrome it measured 0.44 s per ticket.</p>
+        <div class="gate-line"><b>Gate passed</b>micro-batch 2 × accumulate 16 = 32 per update, 365 updates per epoch, 8.7 GB of MPS memory</div>
       </div></div>
 
       <div class="step"><div>
-        <div class="head"><h3>Smoke run: 200 tickets, 1 epoch</h3><span class="pill gate">~10 min</span></div>
-        <p>Measures the real cost on this Mac before committing hours, and checks that the loss falls on a small set.</p>
-        <div class="cmd">--micro-batch 1 --grad-accum 32 --epochs 1   # gradient checkpointing on, fp32</div>
-        <div class="gate-line"><b>Gate</b>loss falls · peak memory fits in 16 GB · seconds per update recorded → real epoch-time estimate</div>
+        <div class="head"><h3>Find why training diverged</h3><span class="pill done">done</span></div>
+        <p>Warmup alone was not enough. One change at a time: no gradient checkpointing, 0.3× learning rate, and RL term off. Only RL off kept the loss falling past 2,400 tickets, so the final recipe is warmup plus cross-entropy only. Logs: <code>logs/diag_*.log</code>.</p>
       </div></div>
 
       <div class="step"><div>
-        <div class="head"><h3>Full run, seed 42, script defaults</h3><span class="pill next">main run</span></div>
-        <div class="kv">
-          <dt>optimizer</dt><dd>AdamW, weight decay 0.01</dd>
-          <dt>learning rate</dt><dd>encoder 2.5e-5 · head 1e-4 · cosine decay to 1e-6</dd>
-          <dt>batch</dt><dd>1 ticket × 32 accumulated = 32 per update → 365 updates per epoch</dd>
-          <dt>epochs</dt><dd>up to 4; score validation after each, keep the best</dd>
-          <dt>loss</dt><dd>cross-entropy + Laya's proper-scoring RL term (unchanged)</dd>
-        </div>
-        <div class="gate-line"><b>Stop rule</b>more than 3 h per epoch, or out of memory at micro-batch 1 → move this step to Colab, nothing else changes</div>
+        <div class="head"><h3>Seed 42: full run</h3><span class="pill done">done</span></div>
+        <p>4 epochs, 8.7 h, no crash. Epoch 3 chosen. Temperature T = 3.51 on raw logits; out-of-fold ECE 0.178 → 0.076. (Laya rounds probabilities to 4 decimals, so a fit on the saved probabilities hit the 5.0 cap.)</p>
       </div></div>
 
       <div class="step"><div>
-        <div class="head"><h3>Calibrate on validation</h3><span class="pill next">logged selection</span></div>
-        <p>Fit one temperature on validation with the script's own <code>fit_temperature</code>, then re-score ECE and the auto-route line for the 95% target. Logged as a selection step.</p>
-        <div class="gate-line"><b>Gate</b>keep the temperature only if ECE falls and log-loss does not rise (the baseline's rule)</div>
+        <div class="head"><h3>Seed 43: full run</h3><span class="pill done">done</span></div>
+        <p>4 epochs, 8.3 h, no crash. Epoch 2 chosen by the tie-break. T = 2.04.</p>
+        <div class="cmd">caffeinate -i .venv/bin/python train_arm_d.py --seed 43 &gt; logs/arm_d_seed43.log 2&gt;&amp;1</div>
       </div></div>
 
       <div class="step"><div>
-        <div class="head"><h3>Two more seeds</h3><span class="pill next">variance</span></div>
-        <p>Same settings, seeds 43 and 44. Fine-tuning scores can swing between seeds, so a single run can't prove a 1-point win.</p>
-        <div class="gate-line"><b>Gate</b>report mean and spread across the 3 seeds; the chosen model is fixed after this</div>
+        <div class="head"><h3>Seed 44</h3><span class="pill gate">skipped</span></div>
+        <p>Not run. The test set was opened with two seeds, so a third seed would be a second look and break the "opened once" rule.</p>
       </div></div>
 
       <div class="step"><div>
-        <div class="head"><h3>Open the test set once</h3><span class="pill risk">one shot</span></div>
-        <p>Score B and D on the 2,334 test tickets. A keeps its frozen model-card numbers (79.95% accuracy, 0.815 macro F1).</p>
-        <div class="gate-line"><b>Decision</b>Laya replaces the baseline only if D's test accuracy is above 80.95% (A + 1 point), with the cost shown beside it</div>
+        <div class="head"><h3>Open the test set once</h3><span class="pill done">done</span></div>
+        <p><code>score_test.py</code> scored A, B and both D seeds (raw and calibrated) in one pass and refuses to run again if any <code>predictions/*_test.csv</code> file exists.</p>
+        <div class="gate-line"><b>Decision</b>Laya replaces the baseline only if test accuracy is above 80.95%. Mean 80.70%: not replaced</div>
       </div></div>
-    </div>
-
-    <div class="twocol">
-      <div class="panel">
-        <h3>Time budget</h3>
-        <div class="kv">
-          <dt>measured</dt><dd>inference 0.16 s per ticket on MPS</dd>
-          <dt>assumed</dt><dd>training ≈ 3–4× inference (backward pass + checkpoint recompute)</dd>
-          <dt>per epoch</dt><dd>≈ 1.6–2.1 h, plus 6.5 min validation scoring</dd>
-          <dt>4 epochs</dt><dd>≈ 7–8.5 h per seed</dd>
-        </div>
-        <p class="est">An estimate until the smoke run replaces it with a measurement.</p>
-      </div>
-      <div class="panel">
-        <h3>What D has to show</h3>
-        <ul>
-          <li>Problem recall well above 0.33. The Incident ↔ Problem line is the main weak spot</li>
-          <li>ECE close to the baseline's 0.045, so the auto-route line is trustworthy</li>
-          <li>More tickets auto-routed than A's 48.5% at 95%+ accuracy</li>
-          <li>Accuracy over 1 point above A. If D also stops near 80%, the label noise is the ceiling, not the model</li>
-        </ul>
-      </div>
     </div>
   </section>
 
   <section>
-    <p class="eyebrow">Open questions</p>
-    <h2>Before the run starts</h2>
+    <p class="eyebrow">Why about 80%? · train and validation only</p>
+    <h2>Label noise is not the cause</h2>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Check</th><th>Finding</th></tr></thead>
+        <tbody>
+          <tr><td>Reworded copies of one ticket</td><td>98.7% of tickets match their family's label. 59 of 3,692 families conflict (1.6%).</td></tr>
+          <tr><td>Similar tickets from other families</td><td>85.9% share the label at 0.5 to 0.7 similarity. No two families are above 0.7.</td></tr>
+          <tr><td>Tags, queue, priority</td><td>Tags link to the type (Cramér's V up to 0.48) but add nothing to the text: 79.3% with them, 80.0% without.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Labels are consistent, and no other column carries extra signal. What is left: the text alone may not decide Incident vs Problem. This is likely, not proven. Details: Phase 7 of the notebook.</p>
+  </section>
+
+  <section>
+    <p class="eyebrow">Still open</p>
+    <h2>Housekeeping</h2>
     <ol class="q">
-      <li><b>Calibration in Arm D?</b> Fitting a temperature on validation is a selection step. Include it (planned above) or report raw confidence only?</li>
-      <li><b>Seeds.</b> Three seeds roughly triples the Mac time (≈ 21–25 h). Run all three locally, or move seeds 43–44 to Colab?</li>
-      <li><b>Commit.</b> Commit <code>.scratch/</code> on <code>do CP</code>, or keep it local? The <code>laya-discover/learn/</code> lesson folder from the earlier detour can be deleted.</li>
+      <li><b>Notebook re-run.</b> Phase 6 ran on its own cells. A full top-to-bottom run (about 13 minutes of Laya scoring) would confirm the notebook runs clean end to end.</li>
+      <li><b>Backup.</b> The fine-tuned checkpoints (about 0.8 GB each) exist only on this Mac and are gitignored.</li>
     </ol>
   </section>
 
-  <footer>Numbers come from <code>laya-discover/laya_classifier.ipynb</code> (validation) and the baseline's <code>artifacts/model_card.json</code> (test). Script line references: Laya <code>notebooks/laya_finetune_typed_decisions_mps.py</code>, read 2026-10-05.</footer>
+  <footer>Numbers come from <code>laya-discover/laya_classifier.ipynb</code> (validation, Phase 6 test table), <code>logs/score_test.log</code> and the baseline's <code>artifacts/model_card.json</code>. Script reference: Laya <code>notebooks/laya_finetune_typed_decisions_mps.py</code>, read 2026-10-05.</footer>
 </main>

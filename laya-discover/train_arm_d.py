@@ -1,4 +1,4 @@
-"""Arm D: fine-tune Laya on the ticket-type training rows (Apple Silicon / MPS).
+"""Model D: fine-tune Laya on the ticket-type training rows (Apple Silicon / MPS).
 
 Vendored from Laya's official Apple-Silicon fine-tune script (Apache-2.0):
   https://github.com/NandhaKishorM/laya/blob/main/notebooks/laya_finetune_typed_decisions_mps.py
@@ -6,13 +6,13 @@ Vendored from Laya's official Apple-Silicon fine-tune script (Apache-2.0):
 
 Changes from the official script, each required by the evaluation rules in
 .scratch/laya-discover/spec.md:
-  1. Data   — our 11,670 training rows from splits.csv, raw subject + body, Arm B's exact
+  1. Data   — our 11,670 training rows from splits.csv, raw subject + body, Model B's exact
               question, one-hot targets. Validation and test rows never enter training.
   2. Seed   — --seed drives the data order and the RL noise (the original hard-codes 42 + epoch
               for the order and never seeds the noise).
   3. Epochs — every epoch is saved to its own folder (the original overwrites one folder), then
               reloaded with laya.load and scored on validation through the same prediction-file
-              format as Arms A-C. Epoch checkpoints carry temperature 1.0, so scores are raw.
+              format as Models A-C. Epoch checkpoints carry temperature 1.0, so scores are raw.
   4. Calibration — removed here. The original fits temperatures on a random 10% of training rows,
               which holds reworded siblings of training tickets. The notebook fits the temperature
               on validation instead, after the epoch is chosen.
@@ -57,7 +57,7 @@ CHECKPOINTS = HERE / "checkpoints"
 PRED_DIR = HERE / "predictions"
 
 TYPES = ["Incident", "Request", "Problem", "Change"]
-# Identical to Arm B's question in laya_classifier.ipynb (Phase 5 asserts this). It is part of the model input.
+# Identical to Model B's question in laya_classifier.ipynb (Phase 5 asserts this). It is part of the model input.
 TYPE_QUESTION = {"ticket_type": {"type": "choice",
     "instructions": "What type of IT support ticket is this?",
     "criteria": {
@@ -281,7 +281,7 @@ def train(args):
 
 
 def main():
-    p = argparse.ArgumentParser(description="Arm D: fine-tune Laya on the ticket-type training rows")
+    p = argparse.ArgumentParser(description="Model D: fine-tune Laya on the ticket-type training rows")
     p.add_argument("--seed", type=int, default=42)
     p.add_argument("--epochs", type=int, default=4)
     p.add_argument("--micro-batch", type=int, default=2)
